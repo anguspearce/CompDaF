@@ -1,4 +1,4 @@
-FILES := raftlib
+FILES := RaftlibServer
 override CXXFLAGS += -lpthread -Wpedantic -Wall -Wextra -Wsign-conversion -Wconversion -std=c++2a -IuWebSockets/uSockets/src -IuWebSockets/src
 override LDFLAGS += uWebSockets/uSockets/*.o -lz 
 
