@@ -1,1 +1,3 @@
 .vscode
+uWebSockets/uSockets/*.o
+uWebSockets/uSockets/*.a

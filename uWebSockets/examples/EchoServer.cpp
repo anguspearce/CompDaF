@@ -1,6 +1,5 @@
 /* We simply call the root header file "App.h", giving you uWS::App and uWS::SSLApp */
 #include "App.h"
-
 /* This is a simple WebSocket echo server example.
  * You may compile it with "WITH_OPENSSL=1 make" or with "make" */
 
@@ -12,12 +11,7 @@ int main() {
 
     /* Keep in mind that uWS::SSLApp({options}) is the same as uWS::App() when compiled without SSL support.
      * You may swap to using uWS:App() if you don't need SSL */
-    uWS::SSLApp({
-        /* There are example certificates in uWebSockets.js repo */
-	    .key_file_name = "../misc/key.pem",
-	    .cert_file_name = "../misc/cert.pem",
-	    .passphrase = "1234"
-	}).ws<PerSocketData>("/*", {
+    uWS::App().ws<PerSocketData>("/*", {
         /* Settings */
         .compression = uWS::SHARED_COMPRESSOR,
         .maxPayloadLength = 16 * 1024 * 1024,
@@ -29,9 +23,12 @@ int main() {
         /* Handlers */
         .upgrade = nullptr,
         .open = [](auto */*ws*/) {
+                        std::cout << "Connected boi "  << std::endl;
+
             /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */
         },
         .message = [](auto *ws, std::string_view message, uWS::OpCode opCode) {
+           
             ws->send(message, opCode, true);
         },
         .drain = [](auto */*ws*/) {
