@@ -6,6 +6,7 @@ import asyncio
 #Protobuf imports
 import uuid
 import numpy as np
+
 from protobufs.python import defs_pb2
 from protobufs.python import enums_pb2
 from protobufs.python import register_viewer_pb2
@@ -27,9 +28,15 @@ class Client:
                 exit(0)
             finally:
                 message, type = self.registerViewer()
-                #await websocket.send()
                 
-            
+                #Sending Session Id from register viewer
+                await websocket.send(str(message.session_id))
+                regAck = await websocket.recv()
+                if(regAck == "True"):
+                    print("Register viewer acknowledged by server")
+                else:
+                    print("Server failed to acknowledge session ID")
+                    exit(0)
             
 
         
@@ -57,7 +64,7 @@ class Client:
     #     for task in pending:
     #         task.cancel()
 
-    def registerViewer():
+    def registerViewer(self):
         message_type = enums_pb2.EventType.REGISTER_VIEWER
         message = register_viewer_pb2.RegisterViewer()
         message.session_id = np.uint32(uuid.uuid4().int % np.iinfo(np.uint32()).max)
