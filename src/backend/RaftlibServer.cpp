@@ -1,7 +1,10 @@
-#include "App.h"
-#include "../protobufs/cpp/register_viewer.pb.h"
+#include <uWebSockets/App.h>
 
-#include "../protobufs/cpp/enums.pb.h"
+#include <string_view>
+
+#include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/enums.pb.h>
+
 #include "EventHeader.h"
 
 class RaftlibServer
@@ -16,15 +19,8 @@ public:
     void run()
     {
         uWS::App().ws<PerSocketData>("/*", {/* Settings */
-                                            .compression = uWS::SHARED_COMPRESSOR,
+                                            .compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .maxPayloadLength = 16 * 1024 * 1024,
-                                            .idleTimeout = 16,
-                                            .maxBackpressure = 1 * 1024 * 1024,
-                                            .closeOnBackpressureLimit = false,
-                                            .resetIdleTimeoutOnSend = false,
-                                            .sendPingsAutomatically = true,
-                                            /* Handlers */
-                                            .upgrade = nullptr,
                                             .open = [](auto * /*ws*/)
                                             {
                 /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */ },
@@ -62,16 +58,7 @@ public:
                                                     }
                                                 }
                                                 ws->send(message, opCode, true);
-                                            },
-                                            .drain = [](auto * /*ws*/)
-                                            {
-                /* Check ws->getBufferedAmount() here */ },
-                                            .ping = [](auto * /*ws*/, std::string_view)
-                                            {
-                /* Not implemented yet */ },
-                                            .pong = [](auto * /*ws*/, std::string_view)
-                                            {
-                /* Not implemented yet */ },
+                                            },                                            
                                             .close = [](auto * /*ws*/, int /*code*/, std::string_view /*message*/)
                                             {
                 /* You may access ws->getUserData() here */ }})
