@@ -15,8 +15,8 @@
 ``` ./raftlib-server ```
 
 ## Run DALiuGE backend
-``` cd .. ```
-``` cd src ```
+``` cd .. ``` <br />
+``` cd src ``` <br />
 ``` ./mainServer.py ``` 
 
 ## Run client
