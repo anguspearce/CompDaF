@@ -14,7 +14,7 @@
 
 ## Starting a server
 You can only run one server at a time for now.<br />
-cd into CompDaF<br /><br />
+```cd ..``` into the main directory. <br /><br />
 Either the RaftLib backend:<br />
 ``` ./build/raftlib-server ``` <br />
 Or the DALiuGE backend:<br />
