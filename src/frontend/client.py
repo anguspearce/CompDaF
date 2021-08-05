@@ -74,18 +74,8 @@ class Client:
             message = await websocket.recv()
             print(message)
 
-    # async def handler(self, path):
-    #     consumer_task = asyncio.ensure_future(self.consumer_handler(self.websocket, path))
-    #     producer_task = asyncio.ensure_future(self.producer_handler(self.websocket, path))
-    #     done, pending = await asyncio.wait(
-    #         [consumer_task, producer_task],
-    #         return_when = asyncio.FIRST_COMPLETED,
-    #     )
-    #     for task in pending:
-    #         task.cancel()
 
-
-
+    
     def registerViewer(self):
         message_type = enums_pb2.EventType.REGISTER_VIEWER
         message = register_viewer_pb2.RegisterViewer()
