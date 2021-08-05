@@ -8,18 +8,18 @@
 
 ## Build C++ files
 ``` mkdir build ``` <br /> 
+``` cd build ``` <br />
 ``` cmake .. ``` <br /> 
 ``` make ``` 
 
 ## Starting a server
 You can only run one server at a time for now.<br />
+cd into CompDaF<br /><br />
 Either the RaftLib backend:<br />
-``` ./raftlib-server ```
+``` ./build/raftlib-server ``` <br />
 Or the DALiuGE backend:<br />
-``` cd .. ``` <br />
-``` cd src ``` <br />
-``` ./mainServer.py ``` 
+``` ./src/mainServer.py ``` 
 
 ## Run client
-``` ./main.py ```
+``` ./src/main.py ```
 
