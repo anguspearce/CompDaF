@@ -12,11 +12,10 @@
 ``` make ``` 
 
 ## Starting a server
-You can only run one server at a time for now:
-## Run RaftLib backend
+You can only run one server at a time for now.<br />
+Either the RaftLib backend:<br />
 ``` ./raftlib-server ```
-
-## Run DALiuGE backend
+Or the DALiuGE backend:<br />
 ``` cd .. ``` <br />
 ``` cd src ``` <br />
 ``` ./mainServer.py ``` 
