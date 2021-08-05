@@ -6,10 +6,20 @@
 ## Build submodules
 ```git submodule update --init --recursive ```
 
-## Build project
+## Build C++ files
 ``` mkdir build ``` <br /> 
 ``` cmake .. ``` <br /> 
 ``` make ``` 
 
-## Run 
+## Run RaftLib backend
 ``` ./raftlib-server ```
+
+## Run DALiuGE backend
+``` cd .. ```
+``` cd src ```
+``` ./mainServer.py ``` 
+
+## Run client
+``` ./main.py ```
+
+You can only run one server at a time for now.
