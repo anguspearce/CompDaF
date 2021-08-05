@@ -7,9 +7,9 @@
 ```git submodule update --init --recursive ```
 
 ## Build project
-``` mkdir build ```
-``` cmake .. ```
-``` make ```
+``` mkdir build ```**Enter**
+``` cmake .. ```**Enter**
+``` make ```**Enter**
 
 ## Run 
 ``` ./raftlib-server ```
