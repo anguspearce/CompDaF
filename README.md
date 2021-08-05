@@ -11,6 +11,8 @@
 ``` cmake .. ``` <br /> 
 ``` make ``` 
 
+## Starting a server
+You can only run one server at a time for now:
 ## Run RaftLib backend
 ``` ./raftlib-server ```
 
@@ -22,4 +24,3 @@
 ## Run client
 ``` ./main.py ```
 
-You can only run one server at a time for now.
