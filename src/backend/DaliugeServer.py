@@ -15,7 +15,7 @@ from util.message_provider import *
 class DaliugeServer:
 
     def __init__(self):
-        start_server = websockets.serve(self._host, "localhost", 9001, ping_interval = None)
+        start_server = websockets.serve(self._host, "localhost", 9000, ping_interval = None)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
@@ -44,7 +44,7 @@ class DaliugeServer:
         print("sent hi")
         
 
-
+    # PROTOBUFFERS
     def registerViewerAck(self,client_session_id):
         
         message_type = enums_pb2.EventType.REGISTER_VIEWER_ACK

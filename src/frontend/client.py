@@ -18,7 +18,7 @@ from util.message_provider import *
 class Client:
     
     def __init__(self):
-        self.url = "ws://localhost:9001"
+        self.url = "ws://localhost:9000"
 
     
     def connectToServer(self):
