@@ -18,7 +18,7 @@ from util.message_provider import *
 class Client:
     
     def __init__(self):
-        self.url = "ws://localhost:9000"
+        self.url = "ws://localhost:9001"
 
     
     def connectToServer(self):
@@ -28,18 +28,23 @@ class Client:
             except:
                 print("Failed to connect.")
                 exit(0)
-            finally:
-                message, type = construct_register_viewer()
-                
-                #Sending Session Id from register viewer
-                await self.websocket.send(add_message_header(message,type))
-                regAck = await self.websocket.recv()
+            
+            message, type = construct_register_viewer()
+    
+            #Sending Session Id from register viewer
+            await self.websocket.send(add_message_header(message,type))
+            regAck = await self.websocket.recv()
+
+            try:
                 messageType, messageId, messagePayload = strip_message_header(regAck)
                 if(messagePayload.success == True):
                     print("Register viewer acknowledged by server")
                 else:
                     print("Server failed to acknowledge session ID")
                     exit(0)
+            except:
+                print("Server failed to acknowledge session ID")
+                exit(0)
                 
         asyncio.get_event_loop().run_until_complete(connect(self))
 
