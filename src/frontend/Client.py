@@ -10,6 +10,7 @@ import numpy as np
 from protobufs.python import defs_pb2
 from protobufs.python import enums_pb2
 from protobufs.python import register_viewer_pb2
+from protobufs.python import file_info_pb2
 
 #util
 from util.message_header import *
@@ -60,7 +61,13 @@ class Client:
         option = input(menu)
 
         if(option == "1"):
-            return "1"
+            directory = input("Please enter the directory name: ")
+            fileName = input("Please enter the file name: ")
+
+            message, type = construct_file_info_request(directory,fileName)
+
+
+            return add_message_header(message,type)
         else:
             return "2"
             
@@ -77,15 +84,24 @@ class Client:
             message = await self.producer()
             await websocket.send(message)
             message = await websocket.recv()
-            print(message)
+            messageType, messageId, messagePayload = strip_message_header(message)
+            handler = self.MESSAGE_TYPE_CODE_TO_EVENT_HANDLER.get(messageType)
+            await handler(self, websocket, messagePayload)
 
-
-    
-    def registerViewer(self):
-        message_type = enums_pb2.EventType.REGISTER_VIEWER
-        message = register_viewer_pb2.RegisterViewer()
-        message.session_id = np.uint32(uuid.uuid4().int % np.iinfo(np.uint32()).max)
+    async def __on_file_info_response(self, ws, msg):
+        if(msg.success == True):
+            print("File name: ",msg.file_info.name)
+            print("File type: ",msg.file_info.type)
+            print("File size: ",msg.file_info.size)
+        else:
+            print("Failed to find file.")
         
-        return (message,message_type)
+    
+    MESSAGE_TYPE_CODE_TO_EVENT_HANDLER = {
+        
+        enums_pb2.EventType.FILE_INFO_RESPONSE:
+            __on_file_info_response,
+        
+    }
            
 
