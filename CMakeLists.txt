@@ -39,7 +39,8 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        src/backend/RaftlibServer.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/Raftlib.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/RaftlibServer.cpp)
 
 add_executable(raftlib-server ${SOURCE_FILES})
 target_link_libraries(raftlib-server ${LINK_LIBS})
