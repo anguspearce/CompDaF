@@ -78,6 +78,10 @@ public:
                 }
                 break;
             }
+            case CARTA::EventType::OPEN_FILE:
+            {
+                std::cout<<"OPENFILE REQUEST" << std::endl;
+            }
             }
         }
         ws->send(message, opCode, true);
