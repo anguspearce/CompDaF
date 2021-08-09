@@ -95,7 +95,9 @@ class Client:
         else:
             print("Failed to find file.")
         
-    
+#    Author: Dylan Fouche
+#    Date: 09/08/2021
+#    Availability: https://github.com/DylanFouche/CADaFloP.git
     MESSAGE_TYPE_CODE_TO_EVENT_HANDLER = {
         
         enums_pb2.EventType.FILE_INFO_RESPONSE:
