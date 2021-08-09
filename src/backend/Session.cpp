@@ -23,6 +23,17 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 
 }
+
+void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
+    const auto& directory = message.directory();
+    const auto& fileName = message.file();
+    auto file_id(message.file_id());
+
+    bool success(true);
+
+    std::cout << directory << fileName << file_id << std::endl;
+}
+
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
     size_t message_length = message.ByteSizeLong();
     size_t required_size = message_length + sizeof(carta::EventHeader);

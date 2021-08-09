@@ -3,6 +3,8 @@
 #include <string_view>
 
 #include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/open_file.pb.h>
+
 #include <carta-protobuf/enums.pb.h>
 #include "Session.h"
 
@@ -80,8 +82,13 @@ public:
             }
             case CARTA::EventType::OPEN_FILE:
             {
-                std::cout<<"OPENFILE REQUEST" << std::endl;
+                CARTA::OpenFile message;
+
+                if(message.ParseFromArray(event_buf,event_length)){
+                    s->OnOpenFile(message,head.request_id);
+                }
             }
+
             }
         }
         ws->send(message, opCode, true);

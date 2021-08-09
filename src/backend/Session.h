@@ -12,6 +12,7 @@
 #include <tbb/task.h>
 #include <uWebSockets/App.h>
 #include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
 struct PerSocketData {
@@ -25,6 +26,7 @@ public:
 
     // CARTA ICD
     void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
+    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
 
     // Sending Protobuf Messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
