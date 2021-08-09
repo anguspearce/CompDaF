@@ -1,6 +1,11 @@
-# D FOUCHE
-# UCT CS HONS
-# fchdyl001@myuct.ac.za
+# ***************************************************************************************
+#    Title: message_header.py
+#    Author: Dylan Fouche
+#    Date: 09/08/2021
+#    Code version: 1.0
+#    Availability: https://github.com/DylanFouche/CADaFloP.git
+#
+# **************************************************************************************
 
 import struct
 

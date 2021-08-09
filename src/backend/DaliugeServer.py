@@ -19,12 +19,12 @@ from astropy.io import fits
 class DaliugeServer:
     
     def __init__(self):
-        start_server = websockets.serve(self._host, "localhost", 9001, ping_interval = None)
+        start_server = websockets.serve(self.host, "localhost", 9001, ping_interval = None)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
 
-    async def _host(self, websocket, port):
+    async def host(self, websocket, port):
         message = await websocket.recv()
         messageType, messageId, messagePayload = strip_message_header(message)
         print(f"< {messageId}")
@@ -54,7 +54,7 @@ class DaliugeServer:
         await websocket.send("hi")
         print("sent hi")
         
-    async def __on_file_info_request(self, ws, msg):
+    async def on_file_info_request(self, ws, msg):
         """Handle the FILE_INFO_REQUEST message.
 
         :param ws: the client websocket object
@@ -79,10 +79,13 @@ class DaliugeServer:
             print( e)
         ack, ack_type = construct_file_info_response(fileInfo)
         await ws.send(add_message_header(ack, ack_type))
-        
+    
+#    Author: Dylan Fouche
+#    Date: 09/08/2021
+#    Availability: https://github.com/DylanFouche/CADaFloP.git
     MESSAGE_TYPE_CODE_TO_EVENT_HANDLER = {
         
         enums_pb2.EventType.FILE_INFO_REQUEST:
-            __on_file_info_request,
+            on_file_info_request,
         
     }

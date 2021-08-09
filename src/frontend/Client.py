@@ -21,7 +21,6 @@ class Client:
     def __init__(self):
         self.url = "ws://localhost:9001"
 
-    
     def connectToServer(self):
         async def connect(self):
             try:
