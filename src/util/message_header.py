@@ -9,6 +9,7 @@ import numpy as np
 
 from protobufs.python import enums_pb2
 from protobufs.python import register_viewer_pb2
+from protobufs.python import file_info_pb2
 from protobufs.python import open_file_pb2
 from protobufs.python import region_requirements_pb2
 from protobufs.python import region_histogram_pb2
@@ -29,6 +30,12 @@ MESSAGE_TYPE_TO_PROTOBUF_OBJ = {
         register_viewer_pb2.RegisterViewer,
     enums_pb2.EventType.REGISTER_VIEWER_ACK:
         register_viewer_pb2.RegisterViewerAck,
+
+    enums_pb2.EventType.FILE_INFO_REQUEST:
+        file_info_pb2.FileInfoRequest,
+    enums_pb2.EventType.FILE_INFO_RESPONSE:
+        file_info_pb2.FileInfoResponse,
+
     enums_pb2.EventType.OPEN_FILE:
         open_file_pb2.OpenFile,
     enums_pb2.EventType.OPEN_FILE_ACK:

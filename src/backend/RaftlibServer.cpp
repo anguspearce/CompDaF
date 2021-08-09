@@ -4,6 +4,7 @@
 
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/enums.pb.h>
+#include "Session.h"
 
 #include "EventHeader.h"
 #include "Raftlib.h"
@@ -12,20 +13,19 @@ class RaftlibServer
 {
 public:
     /* ws->getUserData returns one of these */
-    struct PerSocketData
-    {
-        /* Fill with user data */
-    };
-
+    
+    Session* s;
     void run()
     {
         uWS::App().ws<PerSocketData>("/*", {/* Settings */
             .compression = uWS::DEDICATED_COMPRESSOR_256KB,
             .maxPayloadLength = 16 * 1024 * 1024,
-            .open = [](auto * /*ws*/)
+            .open = [&](uWS::WebSocket<false, true, PerSocketData>* ws)
             {
+                OnConnect(ws);
+
             /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */ },
-            .message = [&](auto *ws, std::string_view message, uWS::OpCode opCode)
+            .message = [&](uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode)
             {
                 OnMessage(ws, message, opCode);
             },                                            
@@ -41,8 +41,17 @@ public:
                     })
             .run();
     }
+    
+    void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws){
+    auto socket_data = ws->getUserData();
 
-    void OnMessage(auto *ws, std::string_view message, uWS::OpCode opCode){
+        uint32_t session_id = socket_data->session_id;
+        std::string address = socket_data->address;
+        s = new Session(ws);
+
+    }
+
+    void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode){
         if (message.length() >= sizeof(carta::EventHeader))
         {
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader *>(message.data());
@@ -59,7 +68,7 @@ public:
 
                 if (message.ParseFromArray(event_buf, event_length))
                 {
-                    std::cout << "GOOD" << std::endl;
+                    s->OnRegisterViewer(message,head.icd_version, head.request_id);
                     // session->OnRegisterViewer(message, head.icd_version, head.request_id);
                 }
                 else

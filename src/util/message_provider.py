@@ -8,6 +8,7 @@ import numpy as np
 from protobufs.python import defs_pb2
 from protobufs.python import enums_pb2
 from protobufs.python import register_viewer_pb2
+from protobufs.python import file_info_pb2
 from protobufs.python import open_file_pb2
 from protobufs.python import region_requirements_pb2
 from protobufs.python import region_histogram_pb2
@@ -47,6 +48,32 @@ def construct_register_viewer_ack(client_session_id):
     message.success = True
     return (message, message_type)
 
+def construct_file_info_request(directory,file):
+    """Construct a FILE_INFO_REQUEST message.
+
+    :return: a tuple (message, message type)
+
+    """
+    message_type = enums_pb2.EventType.FILE_INFO_REQUEST
+    message = file_info_pb2.FileInfoRequest()
+    message.file = file
+    message.directory = directory
+    return (message, message_type)
+
+def construct_file_info_response(fileInfo):
+    """Construct a FILE_INFO_REQUEST message.
+
+    :return: a tuple (message, message type)
+
+    """
+    message_type = enums_pb2.EventType.FILE_INFO_RESPONSE
+    message = file_info_pb2.FileInfoResponse()
+    message.file_info.name = fileInfo[0]
+    message.file_info.size = fileInfo[1]
+    message.file_info.type = enums_pb2.FITS
+    message.success = True
+
+    return (message, message_type)
 
 def construct_open_file(file, directory):
     """Construct an OPEN_FILE message.

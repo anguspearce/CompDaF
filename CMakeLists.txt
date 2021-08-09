@@ -17,6 +17,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(PkgConfig REQUIRED)
 pkg_check_modules(RAFT REQUIRED raftlib)
 
+FIND_PACKAGE(TBB QUIET)
+if (TBB_FOUND)
+    message(STATUS "Found TBB using find_package")
+else ()
+    PKG_SEARCH_MODULE(TBB REQUIRED tbb)
+    if (TBB_FOUND)
+        message(STATUS "Found TBB using pkg-config")
+    else()
+        message(FATAL_ERROR "TBB not found")
+    endif ()
+endif()
+
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 
@@ -34,15 +46,15 @@ set(LINK_LIBS
         ${PROTOBUF_LIBRARY}
         uSockets
         z
+        tbb
         ${CMAKE_THREAD_LIBS_INIT}
 
         )
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/RaftlibServer.cpp)
-
-
+        src/backend/RaftlibServer.cpp
+        src/backend/Session.cpp)
 
 add_executable(raftlib-server ${SOURCE_FILES})
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
