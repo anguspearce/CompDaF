@@ -1,11 +1,11 @@
-/**
- * test file from mr-j0nes @github
- * Proof of concept Raftlib
- *
- * Want to have a 3 kernels stream which produces and sends 10 numbers down the stream.
- * The 10 numbers should be created by the first kernel and destroyed by the last.
- *
- */
+// /**
+//  * test file from mr-j0nes @github
+//  * Proof of concept Raftlib
+//  *
+//  * Want to have a 3 kernels stream which produces and sends 10 numbers down the stream.
+//  * The 10 numbers should be created by the first kernel and destroyed by the last.
+//  *
+//  */
 #include <raft>
 #include <iostream>
 

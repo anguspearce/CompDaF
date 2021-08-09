@@ -6,8 +6,7 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "EventHeader.h"
-
-#include "Raftlib.cpp"
+#include "Raftlib.h"
 
 class RaftlibServer
 {
