@@ -15,6 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 FIND_PACKAGE(PkgConfig REQUIRED)
+pkg_check_modules(RAFT REQUIRED raftlib)
 
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
@@ -39,8 +40,11 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/Raftlib.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/backend/RaftlibServer.cpp)
 
+
+
 add_executable(raftlib-server ${SOURCE_FILES})
+target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
+target_compile_options(raftlib-server PUBLIC ${RAFT_CFLAGS})
 target_link_libraries(raftlib-server ${LINK_LIBS})
