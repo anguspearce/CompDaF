@@ -55,7 +55,7 @@ class Client:
         print(message)
 
     async def producer(self):
-        menu = "1. File Info \n2. File Load\n"
+        menu = "1. File Info \n2. Open File\n"
 
         option = input(menu)
 
@@ -73,7 +73,6 @@ class Client:
             message, type = construct_open_file(directory,fileName)
             
             return add_message_header(message,type)
-            return "2"
             
     async def consumer_handler(self, websocket, path):
         print("lol")
