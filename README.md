@@ -1,7 +1,7 @@
 # CompDaF
 
 ## Clone repository 
-```git clone https://github.com/CARTAvis/carta-backend.git```
+```git clone https://github.com/anguspearce/CompDaF.git```
 
 ## Build submodules
 ```git submodule update --init --recursive ```
