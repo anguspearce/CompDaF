@@ -29,6 +29,18 @@ else ()
     endif ()
 endif()
 
+FIND_PACKAGE(CFITSIO QUIET)
+if (CFITSIO_FOUND)
+    message(STATUS "Found cfitsio using find_package")
+else ()
+    PKG_SEARCH_MODULE(CFITSIO REQUIRED cfitsio)
+    if (CFITSIO_FOUND)
+        message(STATUS "Found cfitsio using pkg-config")
+    else ()
+        message(FATAL_ERROR "Could not find cfitsio")
+    endif ()
+endif()
+
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 
