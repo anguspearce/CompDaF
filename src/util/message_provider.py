@@ -80,7 +80,7 @@ def construct_file_info_response(fileInfo):
 
     return (message, message_type)
 
-def construct_open_file(file, directory):
+def construct_open_file(directory, file):
     """Construct an OPEN_FILE message.
 
     :param file: the name of the file to open
