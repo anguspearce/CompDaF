@@ -14,6 +14,7 @@
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include "fitsio.h"
 
 struct PerSocketData {
     uint32_t session_id;
