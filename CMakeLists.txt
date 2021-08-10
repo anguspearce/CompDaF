@@ -59,6 +59,8 @@ set(LINK_LIBS
         uSockets
         z
         tbb
+        cfitsio
+
         ${CMAKE_THREAD_LIBS_INIT}
 
         )
