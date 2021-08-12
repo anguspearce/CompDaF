@@ -1,4 +1,5 @@
 #include "Session.h"
+#include "FitsReader.h"
 
 #include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
@@ -28,10 +29,15 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     const auto& directory = message.directory();
     const auto& fileName = message.file();
     auto file_id(message.file_id());
-
+    std::string filePath=directory+fileName;
     bool success(true);
 
-    std::cout << directory << fileName << file_id << std::endl;
+    std::vector<std::string> hdu_list;
+    std::string messageOut;
+    FitsReader fitsFile=FitsReader(filePath);
+    fitsFile.GetHduList(hdu_list,messageOut);
+    
+    std::cout << directory << fileName << file_id << filePath<<std::endl;
 }
 
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {

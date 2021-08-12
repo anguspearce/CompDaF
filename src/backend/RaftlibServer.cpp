@@ -60,7 +60,7 @@ public:
             const char *event_buf = message.data() + sizeof(carta::EventHeader);
             int event_length = message.length() - sizeof(carta::EventHeader);
             CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
-            std::cout << event_type << "!\n";
+            //std::cout << event_type << "!\n";
 
             switch (head.type)
             {

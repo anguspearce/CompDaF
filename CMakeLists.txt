@@ -68,7 +68,8 @@ set(LINK_LIBS
 set(SOURCE_FILES
         ${SOURCE_FILES}
         src/backend/RaftlibServer.cpp
-        src/backend/Session.cpp)
+        src/backend/Session.cpp
+        src/backend/FitsReader.cpp)
 
 add_executable(raftlib-server ${SOURCE_FILES})
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
