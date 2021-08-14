@@ -61,7 +61,7 @@ class DaliugeServer:
         :param msg: the client message recieved
 
         """
-        f = './src/backend/'+msg.directory+'/'+msg.file
+        f = msg.directory+msg.file
         fileInfo=[]
         try:
             #fits_image_filename = fits.util.get_testdata_filepath('test0.fits')
