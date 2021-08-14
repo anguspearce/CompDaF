@@ -14,6 +14,8 @@
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/enums.pb.h>
+
 #include "fitsio.h"
 
 struct PerSocketData {

@@ -26,6 +26,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 }
 
 void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
+    CARTA::FileInfo file_info;
     const auto& directory = message.directory();
     const auto& fileName = message.file();
     auto file_id(message.file_id());
@@ -33,11 +34,29 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     bool success(true);
 
     std::vector<std::string> hdu_list;
+    std::string fName;
+    int64_t fSize;
     std::string messageOut;
     FitsReader fitsFile=FitsReader(filePath);
-    fitsFile.GetHduList(hdu_list,messageOut);
+
+    //Getting file_info
+    fitsFile.FillFileInfo(hdu_list,fName,fSize,messageOut);
     
-    std::cout << directory << fileName << file_id << filePath<<std::endl;
+    file_info.set_name(fName);
+    file_info.set_size(fSize);
+    file_info.set_type(CARTA::FileType::FITS);
+    file_info.add_hdu_list(hdu_list[0]);
+
+    CARTA::OpenFileAck ack;
+    ack.set_success(success);
+    ack.set_file_id(file_id);
+    *ack.mutable_file_info()=file_info;
+
+    // Send protobuf message to client 
+    SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+
+    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
+
 }
 
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
@@ -47,7 +66,6 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     std::vector<char>& msg = msg_vs_compress.first;
     msg.resize(required_size, 0);
     carta::EventHeader* head = (carta::EventHeader*)msg.data();
-
     head->type = event_type;
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
