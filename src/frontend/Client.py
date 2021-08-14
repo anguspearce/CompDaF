@@ -98,6 +98,14 @@ class Client:
             print("File size: ",msg.file_info.size)
         else:
             print("Failed to find file.")
+
+    async def __on_open_file_ack_response(self, ws, msg):
+        if(msg.success == True):
+            print("File name: ",msg.file_info.name)
+            print("File type: ",msg.file_info.type)
+            print("File size: ",msg.file_info.size)
+        else:
+            print("Failed to find file.")
         
 #    Author: Dylan Fouche
 #    Date: 09/08/2021
@@ -106,6 +114,8 @@ class Client:
         
         enums_pb2.EventType.FILE_INFO_RESPONSE:
             __on_file_info_response,
+        enums_pb2.EventType.OPEN_FILE_ACK:
+            __on_open_file_ack_response,
         
     }
            
