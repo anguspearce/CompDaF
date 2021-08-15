@@ -99,6 +99,9 @@ class Client:
             print("File name: ",msg.file_info.name)
             print("File type: ",msg.file_info.type)
             print("File size: ",msg.file_info.size)
+            print("Img Dimensions: ",msg.file_info_extended.dimensions)
+            print("Image Width: ",msg.file_info_extended.width)
+            print("Image Height: ",msg.file_info_extended.height)
         else:
             print("Failed to find file.")
         

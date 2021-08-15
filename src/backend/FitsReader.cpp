@@ -5,7 +5,7 @@ FitsReader::FitsReader(const std::string &filename)
     _filename = filename;
 }
 
-void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fName,int64_t& fSize, std::string &error)
+void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fName,int64_t& fSize,int& naxis,int& width,int& height, std::string &error)
 {
     //Opening fits file
     fitsfile *fptr;
@@ -18,7 +18,6 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fN
 
     for (int hdu = 0; hdu < hdunum; hdu++)
     {
-        std::cout<<"hdu: "<<hdu<<std::endl;
 
         std::string key;
         char comment[70];
@@ -44,10 +43,22 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fN
             status = 0;
             key = "FILENAME";
             char name[70];
-            //fits_read_record(fptr, 1, record, &status);
             fits_read_key(fptr, TSTRING, key.c_str(), name, comment, &status);
             fName=name;
+
+            //File Size
             fSize=filesize(_filename.c_str());
+
+            //Get Image dimensions
+            fits_get_img_dim(fptr, &naxis,&status);
+
+            //Get image Width and Height
+            key = "NAXIS1";
+            fits_read_key(fptr, TINT, key.c_str(), &width, comment, &status);
+
+            key = "NAXIS2";
+            fits_read_key(fptr, TINT, key.c_str(), &height, comment, &status);
+
         }
         
     }
