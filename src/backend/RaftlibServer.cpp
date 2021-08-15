@@ -108,7 +108,7 @@ public:
                 }
             }
         }
-        ws->send(message, opCode, true);
+        //ws->send(message, opCode, true);
     }
 };
 
