@@ -2,12 +2,11 @@
 #import backend.daliuge
 from frontend.Client import *
 
-
+# Simple main method to create a client object, connect to a server 
 def main():
-    menu = "1. File Info \n2. File Load"
     client = Client()
     client.connectToServer()
-    client.listen()
+    client.menu()
             
 
 if __name__ == "__main__":

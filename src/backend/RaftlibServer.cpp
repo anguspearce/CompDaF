@@ -11,12 +11,17 @@
 #include "EventHeader.h"
 #include "Raftlib.h"
 
-class RaftlibServer
-{
+class RaftlibServer {
 public:
     /* ws->getUserData returns one of these */
     
     Session* s;
+
+    /**
+     * Method creates uWebSocket App with declared settings and calls the relevant handler functions.
+     * 
+     * 
+     */ 
     void run()
     {
         uWS::App().ws<PerSocketData>("/*", {/* Settings */
@@ -25,8 +30,8 @@ public:
             .open = [&](uWS::WebSocket<false, true, PerSocketData>* ws)
             {
                 OnConnect(ws);
-
-            /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */ },
+            /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */ 
+            },
             .message = [&](uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode)
             {
                 OnMessage(ws, message, opCode);
@@ -44,8 +49,14 @@ public:
             .run();
     }
     
+    /**
+     * Sets up session when a new client connects.
+     * 
+     * 
+     * @param ws The websocket of the new connection
+     */
     void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws){
-    auto socket_data = ws->getUserData();
+        auto socket_data = ws->getUserData();
 
         uint32_t session_id = socket_data->session_id;
         std::string address = socket_data->address;
@@ -53,6 +64,14 @@ public:
 
     }
 
+    /**
+     * Receives every message incoming from the websocket and handles it accordingly.
+     * Will call the methods to handle protobuffers that are passed through.
+     * 
+     * @param ws The websocket 
+     * @param message The message received
+     * @param opCode 
+     */
     void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode){
         if (message.length() >= sizeof(carta::EventHeader))
         {
@@ -64,37 +83,38 @@ public:
 
             switch (head.type)
             {
-            case CARTA::EventType::REGISTER_VIEWER:
-            {
-                CARTA::RegisterViewer message;
-
-                if (message.ParseFromArray(event_buf, event_length))
+                case CARTA::EventType::REGISTER_VIEWER:
                 {
-                    s->OnRegisterViewer(message,head.icd_version, head.request_id);
-                    // session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    CARTA::RegisterViewer message;
+
+                    if (message.ParseFromArray(event_buf, event_length))
+                    {
+                        s->OnRegisterViewer(message,head.icd_version, head.request_id);
+                        // session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    }
+                    else
+                    {
+                        std::cout << "BAD" << std::endl;
+                    }
+                    break;
                 }
-                else
+                case CARTA::EventType::OPEN_FILE:
                 {
-                    std::cout<<"BAD" << std::endl;
+                    CARTA::OpenFile message;
 
+                    if(message.ParseFromArray(event_buf,event_length)){
+                        s->OnOpenFile(message,head.request_id);
+                    }
                 }
-                break;
-            }
-            case CARTA::EventType::OPEN_FILE:
-            {
-                CARTA::OpenFile message;
-
-                if(message.ParseFromArray(event_buf,event_length)){
-                    s->OnOpenFile(message,head.request_id);
-                }
-            }
-
             }
         }
         ws->send(message, opCode, true);
     }
 };
 
+/**
+ * Simple main method to create a server object and start it.
+ */
 int main()
 {
     RaftlibServer server;

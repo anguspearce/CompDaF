@@ -16,14 +16,19 @@ from util.message_provider import *
 #Fits file reader
 from astropy.io import fits
 
+
+# 
+#
+#
+#
 class DaliugeServer:
-    
+    # Initialise server by calling the host function and running the event loop forever.
     def __init__(self):
         start_server = websockets.serve(self.host, "localhost", 9001, ping_interval = None)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
-
+    # Host function which awaits incoming connection, registers viewer and creates a session per client.
     async def host(self, websocket, port):
         message = await websocket.recv()
         messageType, messageId, messagePayload = strip_message_header(message)
@@ -42,6 +47,7 @@ class DaliugeServer:
         async for message in websocket:
             await self.consumer(websocket, message)
 
+    # Consumer function that will receive every message from the websocket and handle it.
     async def consumer(self, websocket, message):
         
         try:
@@ -53,16 +59,20 @@ class DaliugeServer:
 
         await websocket.send("hi")
         print("sent hi")
-        
+    
+
+    ### Handling Protocol Buffers ###
+
+    #    Author: Dylan Fouche
+    #    Date: 09/08/2021
+    #    Availability: https://github.com/DylanFouche/CADaFloP.git
     async def on_file_info_request(self, ws, msg):
         """Handle the FILE_INFO_REQUEST message.
-
         :param ws: the client websocket object
         :param msg: the client message recieved
-
         """
-        f = msg.directory+msg.file
-        fileInfo=[]
+        f = msg.directory + msg.file
+        fileInfo = []
         try:
             #fits_image_filename = fits.util.get_testdata_filepath('test0.fits')
             #hdul = fits.open(f)

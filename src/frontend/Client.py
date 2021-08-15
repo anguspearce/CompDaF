@@ -16,11 +16,15 @@ from protobufs.python import file_info_pb2
 from util.message_header import *
 from util.message_provider import *
 
+# Class that represents a client
+# Connects to a backend and gives options for the client to take.
 class Client:
-    
+    # Init on object creation: Creates the url to connect the websocket to.
     def __init__(self):
         self.url = "ws://localhost:9001"
 
+    # Attempts to connect to specified backend and tries to register with the server.
+    # Receives REGISTER_VIEWER_ACK and session creation success.
     def connectToServer(self):
         async def connect(self):
             try:
@@ -48,15 +52,13 @@ class Client:
                 
         asyncio.get_event_loop().run_until_complete(connect(self))
 
-    def listen(self):
-        asyncio.get_event_loop().run_until_complete(self.producer_handler(self.websocket,"yeeet"))
+    # Runs the async producer_handler method
+    def menu(self):
+        asyncio.get_event_loop().run_until_complete(self.producer_handler(self.websocket,""))
 
-    def consumer(self, message):
-        print(message)
-
+    # Supplies user with options list and calls relevant handler methods.
     async def producer(self):
         menu = "1. File Info \n2. Open File\n"
-
         option = input(menu)
 
         if(option == "1"):
@@ -64,7 +66,6 @@ class Client:
             fileName = input("Please enter the file name: ")
 
             message, type = construct_file_info_request(directory,fileName)
-
 
             return add_message_header(message,type)
         else:
@@ -74,14 +75,7 @@ class Client:
             
             return add_message_header(message,type)
             
-    async def consumer_handler(self, websocket, path):
-        print("lol")
-        while True:
-            message = await websocket.recv()
-            self.consumer(message)
-        # async for message self.in websocket:
-        #     await self.consumer(message)
-
+    # Waits for input from client, sends message to server based on input and waits for required response.
     async def producer_handler(self, websocket, path):
         while True:
             message = await self.producer()
@@ -91,6 +85,7 @@ class Client:
             handler = self.MESSAGE_TYPE_CODE_TO_EVENT_HANDLER.get(messageType)
             await handler(self, websocket, messagePayload)
 
+    # COMMENT
     async def __on_file_info_response(self, ws, msg):
         if(msg.success == True):
             print("File name: ",msg.file_info.name)
@@ -98,7 +93,7 @@ class Client:
             print("File size: ",msg.file_info.size)
         else:
             print("Failed to find file.")
-
+    # COMMENT
     async def __on_open_file_ack_response(self, ws, msg):
         if(msg.success == True):
             print("File name: ",msg.file_info.name)
