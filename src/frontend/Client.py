@@ -42,7 +42,7 @@ class Client:
             try:
                 messageType, messageId, messagePayload = strip_message_header(regAck)
                 if(messagePayload.success == True):
-                    print("Register viewer acknowledged by server")
+                    print("Register viewer acknowledged by server\n")
                 else:
                     print("Server failed to acknowledge session ID")
                     exit(0)
@@ -58,22 +58,25 @@ class Client:
 
     # Supplies user with options list and calls relevant handler methods.
     async def producer(self):
-        menu = "1. File Info \n2. Open File\n"
+        menu = "Choose an option:\n1. Open File\n\nSelection: "
         option = input(menu)
+        try:
+            if (option == "-1"):
+                directory = input("Please enter the directory name: ")
+                fileName = input("Please enter the file name: ")
 
-        if(option == "1"):
-            directory = input("Please enter the directory name: ")
-            fileName = input("Please enter the file name: ")
+                message, type = construct_file_info_request(directory, fileName)
 
-            message, type = construct_file_info_request(directory,fileName)
-
-            return add_message_header(message,type)
-        else:
-            directory = input("Please enter the directory name: ")
-            fileName = input("Please enter the file name: ")
-            message, type = construct_open_file(directory,fileName)
+                return add_message_header(message,type)
+            elif (option == "1"):
+                directory = input("Please enter the directory name: ")
+                fileName = input("Please enter the file name: ")
+                message, type = construct_open_file(directory,fileName)
+                
+                return add_message_header(message,type)
+        except:
+            print("There seems to be an issue finding or opening that file, please try again.")
             
-            return add_message_header(message,type)
             
     # Waits for input from client, sends message to server based on input and waits for required response.
     async def producer_handler(self, websocket, path):
@@ -87,14 +90,17 @@ class Client:
 
     # COMMENT
     async def __on_file_info_response(self, ws, msg):
+        print("")
         if(msg.success == True):
             print("File name: ",msg.file_info.name)
             print("File type: ",msg.file_info.type)
             print("File size: ",msg.file_info.size)
         else:
             print("Failed to find file.")
+        print("")
     # COMMENT
     async def __on_open_file_ack_response(self, ws, msg):
+        print("")
         if(msg.success == True):
             print("File name: ",msg.file_info.name)
             print("File type: ",msg.file_info.type)
@@ -104,6 +110,7 @@ class Client:
             print("Image Height: ",msg.file_info_extended.height)
         else:
             print("Failed to find file.")
+        print("")
         
 #    Author: Dylan Fouche
 #    Date: 09/08/2021

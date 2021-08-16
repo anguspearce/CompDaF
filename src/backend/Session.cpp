@@ -22,7 +22,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 
     // Send protobuf message to client 
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
-
 }
 
 void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
@@ -31,14 +30,14 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     auto file_id(message.file_id());
     std::string filePath=directory+fileName;
     bool success(true);
-
+    
     std::vector<std::string> hdu_list;
     std::string fName;
     int64_t fSize;
     int naxis,width,height;
     std::string messageOut;
     FitsReader fitsFile=FitsReader(filePath);
-
+    
     //Getting file_info
     fitsFile.FillFileInfo(hdu_list,fName,fSize,naxis,width,height,messageOut);
     
@@ -48,13 +47,12 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     file_info.set_size(fSize);
     file_info.set_type(CARTA::FileType::FITS);
     file_info.add_hdu_list(hdu_list[0]);
-
+    
     //File info extended
     CARTA::FileInfoExtended file_info_ext;
     file_info_ext.set_dimensions(naxis);
     file_info_ext.set_width(width);
     file_info_ext.set_height(height);
-
 
     CARTA::OpenFileAck ack_message;
     ack_message.set_success(success);
@@ -62,10 +60,8 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     *ack_message.mutable_file_info()=file_info;
     *ack_message.mutable_file_info_extended()=file_info_ext;
     // Send protobuf message to client 
+    
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
-
-    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
-
 }
 
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
