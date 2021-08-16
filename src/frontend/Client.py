@@ -108,6 +108,7 @@ class Client:
             print("Img Dimensions: ",msg.file_info_extended.dimensions)
             print("Image Width: ",msg.file_info_extended.width)
             print("Image Height: ",msg.file_info_extended.height)
+            print("No of Header entries: ",len(msg.file_info_extended.header_entries))
         else:
             print("Failed to find file.")
         print("")
@@ -123,5 +124,6 @@ class Client:
             __on_open_file_ack_response,
         
     }
+    
            
 
