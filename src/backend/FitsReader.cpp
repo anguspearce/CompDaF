@@ -5,10 +5,10 @@ FitsReader::FitsReader(const std::string &filename)
     _filename = filename;
 }
 
-void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fName,int64_t& fSize,int& naxis,int& width,int& height,std::vector<CARTA::HeaderEntry>& headerEntries, std::string &error)
+void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &fName, int64_t &fSize, int &naxis, int &width, int &height, std::vector<CARTA::HeaderEntry> &headerEntries, std::string &error)
 {
     //Opening fits file
-    fitsfile *fptr;
+    //fitsfile *fptr;
     int status = 0, nkeys, hdunum;
 
     //Open fits file
@@ -38,19 +38,19 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fN
             std::string hdu_name = std::to_string(hdu);
 
             hdu_list.push_back(hdu_name);
-            
+
             //Getting the file name
             status = 0;
             key = "FILENAME";
             char name[70];
             fits_read_key(fptr, TSTRING, key.c_str(), name, comment, &status);
-            fName=name;
+            fName = name;
 
             //File Size
-            fSize=filesize(_filename.c_str());
+            fSize = filesize(_filename.c_str());
 
             //Get Image dimensions
-            fits_get_img_dim(fptr, &naxis,&status);
+            fits_get_img_dim(fptr, &naxis, &status);
 
             //Get image Width and Height
             key = "NAXIS1";
@@ -66,24 +66,53 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list,std::string& fN
             char kName[FLEN_CARD];
 
             fits_get_hdrspace(fptr, &nkeys, NULL, &status);
-            for (int i = 1; i <= nkeys; i++)  { 
+            for (int i = 1; i <= nkeys; i++)
+            {
                 CARTA::HeaderEntry hEntry;
-                fits_read_keyn(fptr, i,kName,kValue, kComment, &status);
+                fits_read_keyn(fptr, i, kName, kValue, kComment, &status);
                 hEntry.set_name(kName);
                 hEntry.set_value(kValue);
                 hEntry.set_comment(kComment);
                 headerEntries.push_back(hEntry);
-
             }
-
         }
-        
     }
-    fits_close_file(fptr, &status);
-
 }
-std::ifstream::pos_type FitsReader::filesize(const char* filename)
+void FitsReader::readImagePixels()
+{
+    //Reading image pixels into array
+    long naxes[2] = {1, 1}, fpixel[2] = {1, 1};
+    int bitpix, naxis, status = 0;
+    double *pixels;
+    fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status);
+
+    //allocating memory for one row
+    pixels = (double *)malloc(naxes[0] * sizeof(double));
+
+    if (pixels == NULL)
+    {
+        printf("Memory allocation error\n");
+    }
+    //double allP[naxes[1]][naxes[0]];
+    for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
+    {
+        if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
+                          pixels, NULL, &status)) /* read row of pixels */
+            break;                                /* jump out of loop on error */
+
+        //This below code prints out each pixel with the row number
+        //Is one way of accessing each pixel/row at a time
+
+        // printf(" %4d ", fpixel[1]); /* print row number */
+        // for (int ii = 0; ii < naxes[0]; ii++)
+        //     std::cout << pixels[ii] << " "; /* print each value  */
+        // printf("\n");                       /* terminate line */
+    }
+    std::cout << " " << naxes[0] << " " << naxes[1] << std::endl;
+    fits_close_file(fptr, &status);
+}
+std::ifstream::pos_type FitsReader::filesize(const char *filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-    return in.tellg(); 
+    return in.tellg();
 }
