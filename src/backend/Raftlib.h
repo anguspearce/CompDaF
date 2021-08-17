@@ -9,7 +9,7 @@ class Raftlib{
         double max();
         double min();
 
-}
+};
 
 
 #endif

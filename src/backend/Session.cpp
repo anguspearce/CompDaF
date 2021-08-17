@@ -74,6 +74,9 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
 
+
+    //Reading image pixels for region_histogram_data 
+    fitsFile.readImagePixels();
     //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }
 
