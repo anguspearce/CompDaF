@@ -14,7 +14,7 @@
 #include <numeric>
 
 
-template< typename T > Sum<T>::Sum() : public raft::kernel()
+template< typename T > Sum<T>::Sum() : public raft::parallel_k()
 {
     /** declare ports **/
     input.template addPort< T >("input_arr");

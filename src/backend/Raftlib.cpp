@@ -11,7 +11,7 @@ double Raftlib::sum(std::vector<std::int64_t> vec){
    
    raft::map m;
    /** Linking the vector to the input of the kernel**/
-   m += vec >> s[ "input_arr" ];
+   m += splitAndSum >> s[ "input_arr" ];
    /** take the only output port of s and link it to the only input port of p **/
    auto total = 0;
    m += s >> total;
@@ -23,4 +23,8 @@ double Raftlib::sum(std::vector<std::int64_t> vec){
     */
    m.exe();
    return( EXIT_SUCCESS );
+}
+
+std::vector<std::int64_t> splitAndSum(){
+    return 
 }

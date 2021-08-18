@@ -8,6 +8,7 @@ class Raftlib{
         double stdDev();
         double max();
         double min();
+        std::vector<std::int64_t> splitAndSum();
 
 };
 
