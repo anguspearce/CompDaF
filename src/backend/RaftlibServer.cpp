@@ -11,7 +11,7 @@
 #include "EventHeader.h"
 
 #include "Raftlib.h"
-#include "Statistics.h"
+
 
 class RaftlibServer {
 public:
@@ -63,7 +63,7 @@ public:
         uint32_t session_id = socket_data->session_id;
         std::string address = socket_data->address;
         s = new Session(ws);
-
+        std::cout << "Client connected." << std::endl;
     }
 
     /**
