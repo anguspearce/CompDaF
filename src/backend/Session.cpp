@@ -25,7 +25,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t ic
 
     // Send protobuf message to client
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
-    std::cout << "Sending register viewer ack." << std::endl;
 }
 
 void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
@@ -74,7 +73,10 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     *ack_message.mutable_file_info_extended() = file_info_ext;
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
-    std::cout << "Sending file info." << std::endl;
+
+
+    //Reading image pixels for region_histogram_data 
+    fitsFile.readImagePixels();
     //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }
 
