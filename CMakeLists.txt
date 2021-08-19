@@ -56,20 +56,21 @@ set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
         ${PROTOBUF_LIBRARY}
+        ${RAFT_LIBRARIES}
         uSockets
         z
         tbb
         cfitsio
-
         ${CMAKE_THREAD_LIBS_INIT}
-
         )
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
         src/backend/RaftlibServer.cpp
         src/backend/Session.cpp
-        src/backend/FitsReader.cpp)
+        src/backend/FitsReader.cpp
+        src/backend/Raftlib.cpp
+        src/backend/Sum.h)
 
 add_executable(raftlib-server ${SOURCE_FILES})
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
