@@ -3,11 +3,13 @@
 
 #include <raft>
 
-template< typename T  > class Sum : public raft::kernel {
+template< typename T  > class Sum : public raft::parallel_k {
     public:
         Sum() : raft::kernel();
         virtual raft::kstatus run();
 };
+
+
 
 
 #endif

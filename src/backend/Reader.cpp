@@ -1,5 +1,5 @@
 #include "Raftlib.h"
-#include "Sum.h"
+#include "Reader.h"
 
 
 #include <cassert>
@@ -14,17 +14,17 @@
 #include <numeric>
 
 
-template< typename T > Sum<T>::Sum() : public raft::parallel_k()
+template< typename T > Reader<T>::Reader(std::vector<std::int64_t> &in) : public raft::kernel()
 {
     /** declare ports **/
-    input.template addPort< T >("input_arr");
+    this->in = *in;
     output.template addPort< T  >( "sum" );
 }
 
-template< typename T > raft::kstatus Sum<T>::run()
+template< typename T > raft::kstatus Reader<T>::run()
 {
-    T a;
-    input[ "input_arr" ].pop( a );
+    
+    
 
     /** smart obj allocate directly on output port **/
     auto out( output[ "sum" ].template allocate_s< T >() );
