@@ -108,6 +108,21 @@ void FitsReader::readImagePixels()
         //     std::cout << pixels[ii] << " "; /* print each value  */
         // printf("\n");                       /* terminate line */
     }
+
+    using ex_t = double;
+    /** data source & receiver container **/
+    std::vector<ex_t> v, o;
+    ex_t i(0);
+    /** fill container **/
+    auto func([&]()
+              { return (i++); });
+    while (i < 10)
+    {
+        v.emplace_back(func());
+    }
+    Raftlib raft;
+    raft.sum(v);
+
     std::cout << " " << naxes[0] << " " << naxes[1] << std::endl;
     fits_close_file(fptr, &status);
 }
