@@ -93,37 +93,30 @@ void FitsReader::readImagePixels()
     {
         printf("Memory allocation error\n");
     }
-    //double allP[naxes[1]][naxes[0]];
+
+    std::vector<std::vector<double>> imageData;
     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
     {
         if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
                           pixels, NULL, &status)) /* read row of pixels */
             break;                                /* jump out of loop on error */
-
+        std::vector<double> v;
         //This below code prints out each pixel with the row number
         //Is one way of accessing each pixel/row at a time
 
         // printf(" %4d ", fpixel[1]); /* print row number */
-        // for (int ii = 0; ii < naxes[0]; ii++)
-        //     std::cout << pixels[ii] << " "; /* print each value  */
-        // printf("\n");                       /* terminate line */
+        for (int ii = 0; ii < naxes[0]; ii++)
+            v.push_back(pixels[ii]);
+        // std::cout << pixels[ii] << " "; /* print each value  */
+        //printf("\n");                       /* terminate line */
+        imageData.push_back(v);
     }
+    std::cout << "Copied image data to array" << std::endl;
 
-    using ex_t = double;
-    /** data source & receiver container **/
-    std::vector<ex_t> v, o;
-    ex_t i(0);
-    /** fill container **/
-    auto func([&]()
-              { return (i++); });
-    while (i < 10)
-    {
-        v.emplace_back(func());
-    }
     Raftlib raft;
-    raft.sum(v);
+    double total = raft.sum(imageData);
 
-    std::cout << " " << naxes[0] << " " << naxes[1] << std::endl;
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << total << std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
