@@ -11,7 +11,6 @@
 #include "EventHeader.h"
 
 #include "Raftlib.h"
-#include "Sum.h"
 
 
 class RaftlibServer {
