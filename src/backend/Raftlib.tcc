@@ -4,9 +4,9 @@
 #include <vector>
 #include <iostream>
 // #include "Raftlib.h"
-#include "SplitVector.hpp"
-#include "AddVector.hpp"
-#include "Sum.hpp"
+#include "SplitVector.tcc"
+#include "AddVector.tcc"
+#include "Sum.tcc"
 
 #include <raft>
 #include <chrono>
