@@ -11,6 +11,8 @@ class Raftlib{
         double stdDev();
         double max();
         double min();
+    private:
+        const int NUM_THREADS = 5;
 
 };
 

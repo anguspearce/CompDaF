@@ -30,12 +30,14 @@ public:
         
         for (auto &port : input)
         {
-            // if (port.size() > 0)
-            // {
-                T a;
-                port.pop(a);
+            if (port.size() > 0)
+            {
+                //T a;
+                //port.pop(a);
+                auto &a( port.template peek< T >() );
                 total += a;
-            //}
+                port.recycle();
+            }
         }
 
         return (raft::proceed);

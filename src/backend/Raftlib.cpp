@@ -14,9 +14,9 @@ float Raftlib::sum(std::vector<std::vector<float>> &vec)
     using splitvec = SplitVector<type_v>;
     using addvec = AddVector<type_a,float>;
     using sum = Sum<float>;
-    splitvec sp(1);
+    splitvec sp(NUM_THREADS);
     addvec av;
-    sum s(1);
+    sum s(NUM_THREADS);
     raft::map m;
 
     auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
