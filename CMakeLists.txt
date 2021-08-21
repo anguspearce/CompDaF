@@ -69,8 +69,7 @@ set(SOURCE_FILES
         src/backend/RaftlibServer.cpp
         src/backend/Session.cpp
         src/backend/FitsReader.cpp
-        src/backend/Raftlib.cpp
-        src/backend/Sum.h)
+        )
 
 add_executable(raftlib-server ${SOURCE_FILES})
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
