@@ -7,22 +7,25 @@
 
 #include "Raftlib.h"
 
-template <typename T>
-class AddVector : public raft::parallel_k
+template <typename T,typename F>
+class AddVector : public raft::kernel
 {
 public:
-    AddVector() : raft::parallel_k()
+    AddVector() : raft::kernel()
     {
         input.addPort<T>("addvec");
-        output.addPort<double>("total");
+        output.addPort<F>("total");
     }
-
+    AddVector(const AddVector &other) : raft::kernel() {
+        input.addPort<T>("addvec");
+        output.addPort<F>("total");
+    }
     virtual raft::kstatus run()
     {
         T t;
 
         input["addvec"].template pop(t);
-        double addVecTot = 0;
+        F addVecTot = 0;
         for (int i = 0; i < t.size(); i++)
         {
             for (int j = 0; j < t[i].first.size(); j++)
@@ -31,9 +34,10 @@ public:
             }
         }
 
-        auto c(output["total"].template allocate_s<double>());
+        auto c(output["total"].template allocate_s<F>());
         (*c) = addVecTot;
 
         return (raft::proceed);
     }
+    CLONE();
 };

@@ -6,7 +6,7 @@
 
 class Raftlib{
     public:
-        double sum(std::vector<std::vector<double>> &vec);
+        float sum(std::vector<std::vector<float>> &vec);
         double mean();
         double stdDev();
         double max();

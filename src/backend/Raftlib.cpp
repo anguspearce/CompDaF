@@ -4,23 +4,30 @@
 #include "Sum.hpp"
 
 #include <raft>
+#include <chrono>
+using namespace std::chrono;
 
-double Raftlib::sum(std::vector<std::vector<double>> &vec)
+float Raftlib::sum(std::vector<std::vector<float>> &vec)
 {
-    using type_v = std::vector<double>;
+    using type_v = std::vector<float>;
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
     using splitvec = SplitVector<type_v>;
-    using addvec = AddVector<type_a>;
-    using sum = Sum<double>;
-    splitvec sp;
+    using addvec = AddVector<type_a,float>;
+    using sum = Sum<float>;
+    splitvec sp(1);
     addvec av;
-    sum s;
+    sum s(1);
     raft::map m;
 
     auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
-    m += readeachone >> sp >> av >> s;
+    m += readeachone >> sp ;
+    m += sp <= av >= s;
+    auto start = high_resolution_clock::now();
 
     m.exe();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << "Raft Sum Time: " << duration.count() << std::endl;
 
     return (s.total);
 }

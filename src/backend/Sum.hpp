@@ -16,17 +16,27 @@ class Sum : public raft::parallel_k
 {
 public:
     T total = 0;
-    Sum() : raft::parallel_k()
+    Sum(const std::size_t n_output_ports = 1) : raft::parallel_k()
     {
-        input.template addPort<T>("a");
+        for (auto i(0); i < n_output_ports; i++)
+        {
+            addPortTo<T>(input);
+        }
+        //input.template addPort<T>("a");
     };
 
     virtual raft::kstatus run()
     {
-        T a;
-
-        input["a"].pop(a);
-        total += a;
+        
+        for (auto &port : input)
+        {
+            // if (port.size() > 0)
+            // {
+                T a;
+                port.pop(a);
+                total += a;
+            //}
+        }
 
         return (raft::proceed);
     };

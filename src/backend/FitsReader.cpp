@@ -83,24 +83,24 @@ void FitsReader::readImagePixels()
     //Reading image pixels into array
     long naxes[2] = {1, 1}, fpixel[2] = {1, 1};
     int bitpix, naxis, status = 0;
-    double *pixels;
+    float *pixels;
     fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status);
 
     //allocating memory for one row
-    pixels = (double *)malloc(naxes[0] * sizeof(double));
+    pixels = (float *)malloc(naxes[0] * sizeof(float));
 
     if (pixels == NULL)
     {
         printf("Memory allocation error\n");
     }
 
-    std::vector<std::vector<double>> imageData;
+    std::vector<std::vector<float>> imageData;
     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
     {
-        if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
+        if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL,
                           pixels, NULL, &status)) /* read row of pixels */
             break;                                /* jump out of loop on error */
-        std::vector<double> v;
+        std::vector<float> v;
         //This below code prints out each pixel with the row number
         //Is one way of accessing each pixel/row at a time
 
@@ -114,7 +114,7 @@ void FitsReader::readImagePixels()
     std::cout << "Copied image data to array" << std::endl;
 
     Raftlib raft;
-    double total = raft.sum(imageData);
+    float total = raft.sum(imageData);
 
     std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << total << std::endl;
     fits_close_file(fptr, &status);
