@@ -5,7 +5,7 @@
 #include <raftio>
 #include <raftrandom>
 
-#include "Raftlib.h"
+#include "Raftlib.tcc"
 
 template <typename T, typename F>
 class AddVector : public raft::kernel
@@ -38,7 +38,7 @@ public:
 
         auto c(output["total"].template allocate_s<F>());
         (*c) = addVecTot;
-        
+
         output["total"].send();
         input["addvec"].recycle(1);
 

@@ -5,7 +5,7 @@
 #include <raftio>
 #include <raftrandom>
 
-#include "Raftlib.h"
+#include "Raftlib.tcc"
 
 template <typename T>
 class SplitVector : public raft::parallel_k

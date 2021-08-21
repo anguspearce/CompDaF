@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <carta-protobuf/defs.pb.h>
-#include "Raftlib.h"
+#include "Raftlib.tcc"
 
 class FitsReader {
 public:
