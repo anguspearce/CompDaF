@@ -94,7 +94,6 @@ void FitsReader::readImagePixels()
         printf("Memory allocation error\n");
     }
 
-    std::vector<std::vector<float>> imageData;
     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
     {
         if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL,

@@ -20,6 +20,7 @@ private:
 
     std::string _filename;
     fitsfile *fptr;
+    std::vector<std::vector<float>> imageData;
 
     
 };
