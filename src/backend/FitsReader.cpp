@@ -112,10 +112,10 @@ void FitsReader::readImagePixels()
     }
     std::cout << "Copied image data to array" << std::endl;
 
-    Raftlib raft;
-    float total = raft.sum(imageData);
+    Raftlib<float> raft;
+    raft.sum(imageData);
 
-    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << total << std::endl;
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
