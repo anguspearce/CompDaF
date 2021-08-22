@@ -115,8 +115,9 @@ void FitsReader::readImagePixels()
     Raftlib<float> raft(naxes[1],naxes[0]);
     raft.sum(imageData);
     raft.mean();
+    raft.stdDev(imageData);
 
-    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() <<" Mean: "<<raft.getMean()<< std::endl;
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() <<" Mean: "<<raft.getMean()<<" Stdv: "<<raft.getStdv()<< std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)

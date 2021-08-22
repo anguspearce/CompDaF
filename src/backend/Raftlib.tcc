@@ -6,24 +6,28 @@
 // #include "Raftlib.h"
 #include "SplitVector.tcc"
 #include "AddVector.tcc"
+#include "StdvVector.tcc"
+
 #include "Sum.tcc"
 
 #include <raft>
 #include <chrono>
+#include <cmath>
+
 using namespace std::chrono;
 
 template <typename T>
 class Raftlib
 {
 public:
-    Raftlib(int height,int width)
+    Raftlib(int height, int width)
     {
-        this->noOfPixels = height*width;
+        this->noOfPixels = height * width;
         this->sumTotal = 0;
     }
     void sum(std::vector<std::vector<T>> &vec)
     {
-        
+
         using type_v = std::vector<T>;
         using type_a = std::vector<std::pair<type_v, raft::signal>>;
         using splitvec = SplitVector<type_v>;
@@ -49,7 +53,29 @@ public:
     {
         this->imgMean = this->sumTotal / this->noOfPixels;
     }
-    double stdDev();
+    void stdDev(std::vector<std::vector<T>> &vec)
+    {
+        using type_v = std::vector<T>;
+        using type_a = std::vector<std::pair<type_v, raft::signal>>;
+        using splitvec = SplitVector<type_v>;
+        using stdvvec = StdvVector<type_a, T>;
+        using sum = Sum<T>;
+        splitvec sp(NUM_THREADS);
+        stdvvec sv(getMean());
+        sum s(NUM_THREADS);
+        raft::map m;
+
+        auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
+        m += readeachone >> sp;
+        m += sp <= sv >= s;
+        auto start = high_resolution_clock::now();
+
+        m.exe();
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
+        this->stdvDev= sqrt(s.total/this->noOfPixels);
+    }
     double max();
     double min();
     T getSum()
@@ -60,11 +86,16 @@ public:
     {
         return this->imgMean;
     }
+    T getStdv()
+    {
+        return this->stdvDev;
+    }
 
 private:
     const int NUM_THREADS = 5;
     int noOfPixels;
     T sumTotal;
+    T stdvDev;
     T imgMean;
 };
 
