@@ -16,12 +16,14 @@ template <typename T>
 class Raftlib
 {
 public:
-    Raftlib()
+    Raftlib(int height,int width)
     {
-        this->sumTotal=0;
+        this->noOfPixels = height*width;
+        this->sumTotal = 0;
     }
     void sum(std::vector<std::vector<T>> &vec)
     {
+        
         using type_v = std::vector<T>;
         using type_a = std::vector<std::pair<type_v, raft::signal>>;
         using splitvec = SplitVector<type_v>;
@@ -41,20 +43,29 @@ public:
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(stop - start);
         std::cout << "Raft Sum Time: " << duration.count() << std::endl;
-        this->sumTotal=s.total;
+        this->sumTotal = s.total;
     }
-    double mean();
+    void mean()
+    {
+        this->imgMean = this->sumTotal / this->noOfPixels;
+    }
     double stdDev();
     double max();
     double min();
-    T getSum(){
-            return this->sumTotal;
-
+    T getSum()
+    {
+        return this->sumTotal;
+    }
+    T getMean()
+    {
+        return this->imgMean;
     }
 
 private:
     const int NUM_THREADS = 5;
+    int noOfPixels;
     T sumTotal;
+    T imgMean;
 };
 
 #endif
