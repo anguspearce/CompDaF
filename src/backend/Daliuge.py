@@ -1,4 +1,5 @@
 import dlg
+import pickle
 
 ##
 # @brief SleepApp\n
@@ -14,13 +15,13 @@ import dlg
 
 # @par EAGLE_END
 class Daliuge(dlg.drop.BarrierAppDROP):
-    def __init__(self):
-        print("Init")
+    def initialise(self, data):
+        self.data = data
 
     def run():
         #Application Logic
         print("Define logic")
-        super().addConsumer()
+        
 
 ##
 # @brief SleepApp\n
@@ -39,11 +40,16 @@ class Daliuge(dlg.drop.BarrierAppDROP):
 # @par EAGLE_END
 class Sum(dlg.drop.AppDROP):
     
-    compontent_meta = dlg.meta.dlg_component('RandomArrayApp', 'Random Array App.',
+    compontent_meta = dlg.meta.dlg_component('SumApp', 'Sum App.',
                                     [dlg.meta.dlg_batch_input('binary/*', [])],
                                     [dlg.meta.dlg_batch_output('binary/*', [])],
                                     [dlg.meta.dlg_streaming_input('binary/*')])
-    def run():
+    def run(self):
+        total = 0;
+        for inputDrop in self.inputs:
+            if isinstance(inputDrop, dlg.drop.ContainerDROP):
+                for child in inputDrop.children:
+                    total += child
         
         
         

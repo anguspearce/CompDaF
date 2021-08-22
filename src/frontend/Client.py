@@ -21,7 +21,7 @@ from util.message_provider import *
 class Client:
     # Init on object creation: Creates the url to connect the websocket to.
     def __init__(self):
-        self.url = "ws://localhost:9001"
+        self.url = "ws://localhost:9004"
 
     # Attempts to connect to specified backend and tries to register with the server.
     # Receives REGISTER_VIEWER_ACK and session creation success.
@@ -58,7 +58,7 @@ class Client:
 
     # Supplies user with options list and calls relevant handler methods.
     async def producer(self):
-        menu = "Choose an option:\n1. Open File\n\nSelection: "
+        menu = "Choose an option:\n1. Open File\n2. Exit\n\nSelection: "
         option = input(menu)
         try:
             if (option == "-1"):
@@ -74,6 +74,8 @@ class Client:
                 message, type = construct_open_file(directory,fileName)
                 
                 return add_message_header(message,type)
+            elif (option == "2"):
+                await self.websocket.close()
         except:
             print("There seems to be an issue finding or opening that file, please try again.")
             
@@ -84,6 +86,13 @@ class Client:
             message = await self.producer()
             await websocket.send(message)
             message = await websocket.recv()
+
+            if (message == "Failed"):
+                print("")
+                print("That file is corrupted. Please try again.")
+                print("")
+                continue
+
             messageType, messageId, messagePayload = strip_message_header(message)
             handler = self.MESSAGE_TYPE_CODE_TO_EVENT_HANDLER.get(messageType)
             await handler(self, websocket, messagePayload)
