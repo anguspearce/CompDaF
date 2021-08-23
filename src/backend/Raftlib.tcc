@@ -65,8 +65,11 @@ public:
         using splitvec = SplitVector<type_v>;
         using stdvvec = StdvVector<type_a, T>;
         using sum = Sum<T>;
+        calculateBins();
+        std::vector<int> lbins(this->noOfBins, 0);
+        this->bins = lbins;
         splitvec sp(NUM_THREADS);
-        stdvvec sv(getMean());
+        stdvvec sv(getMean(), bins, this->min, this->binWidth);
         sum s(NUM_THREADS);
         raft::map m;
 
@@ -81,14 +84,17 @@ public:
         std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
         this->stdvDev = sqrt(s.total / this->noOfPixels);
     }
-    void calculateBins(int &nBins, double &bWidth)
+    void calculateBins()
     {
         this->noOfBins = int(std::max(2.0, sqrt(this->noOfPixels)));
         this->binWidth = (this->max - this->min) / this->noOfBins;
+    }
+    void getBins(int &nBins, double &bWidth, std::vector<int> &bins)
+    {
         nBins = this->noOfBins;
         bWidth = this->binWidth;
+        bins = this->bins;
     }
-
     T getSum()
     {
         return this->sumTotal;
@@ -112,6 +118,7 @@ private:
     T min;
     int noOfBins;
     double binWidth;
+    std::vector<int> bins;
 };
 
 #endif
