@@ -81,9 +81,12 @@ public:
         std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
         this->stdvDev = sqrt(s.total / this->noOfPixels);
     }
-    void calculateBins()
+    void calculateBins(int &nBins, double &bWidth)
     {
         this->noOfBins = int(std::max(2.0, sqrt(this->noOfPixels)));
+        this->binWidth = (this->max - this->min) / this->noOfBins;
+        nBins = this->noOfBins;
+        bWidth = this->binWidth;
     }
 
     T getSum()
@@ -98,10 +101,6 @@ public:
     {
         return this->stdvDev;
     }
-    T getBins()
-    {
-        return this->noOfBins;
-    }
 
 private:
     const int NUM_THREADS = 4;
@@ -112,6 +111,7 @@ private:
     T max;
     T min;
     int noOfBins;
+    double binWidth;
 };
 
 #endif

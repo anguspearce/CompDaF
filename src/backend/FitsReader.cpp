@@ -116,9 +116,11 @@ void FitsReader::readImagePixels()
     raft.sum(imageData);
     raft.mean();
     raft.stdDev(imageData);
-    raft.calculateBins();
+    int noOfBins;
+    double binWidth;
+    raft.calculateBins(noOfBins,binWidth);
 
-    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << raft.getBins() << std::endl;
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins<<" BinWidth: "<<binWidth << std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
