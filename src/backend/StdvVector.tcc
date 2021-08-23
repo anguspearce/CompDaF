@@ -9,17 +9,16 @@
 #include "Raftlib.tcc"
 
 template <typename T, typename F>
-class StdvVector : public raft::kernel
+class StdvVector : public raft::parallel_k
 {
 public:
     F mean;
-    StdvVector(F mean) : raft::kernel()
+    StdvVector(F mean) : raft::parallel_k(), mean(mean)
     {
-        this->mean=mean;
         input.addPort<T>("stdvvec");
         output.addPort<F>("total");
     }
-    StdvVector(const StdvVector &other) : raft::kernel()
+    StdvVector(const StdvVector &other) : raft::parallel_k(), mean(other.mean)
     {
         input.addPort<T>("stdvvec");
         output.addPort<F>("total");
@@ -35,9 +34,10 @@ public:
         {
             for (int j = 0; j < t[i].first.size(); j++)
             {
-                meanVecTot += pow((t[i].first[j]-mean),2);
+                meanVecTot += pow((t[i].first[j] - mean), 2);
             }
         }
+        input["stdvvec"].unpeek();
 
         auto c(output["total"].template allocate_s<F>());
         (*c) = meanVecTot;

@@ -35,7 +35,7 @@ public:
 
             auto c(port.template allocate_s<std::vector<std::pair<T, raft::signal>>>());
             (*c) = t;
-            //port.send();
+            port.send();
             //}
         }
         //auto c(output["split"].template allocate_s<std::vector<std::pair<T, raft::signal>>>());

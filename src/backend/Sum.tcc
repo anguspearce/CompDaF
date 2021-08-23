@@ -15,9 +15,10 @@ template <typename T>
 class Sum : public raft::parallel_k
 {
 public:
-    T total = 0;
+    T total;
     Sum(const std::size_t n_output_ports = 1) : raft::parallel_k()
     {
+        this->total = 0;
         for (auto i(0); i < n_output_ports; i++)
         {
             addPortTo<T>(input);
@@ -27,15 +28,17 @@ public:
 
     virtual raft::kstatus run()
     {
-        
+
         for (auto &port : input)
         {
             if (port.size() > 0)
             {
                 //T a;
                 //port.pop(a);
-                auto &a( port.template peek< T >() );
+                auto &a(port.template peek<T>());
                 total += a;
+                port.unpeek();
+
                 port.recycle();
             }
         }

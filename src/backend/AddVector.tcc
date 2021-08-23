@@ -8,15 +8,16 @@
 #include "Raftlib.tcc"
 
 template <typename T, typename F>
-class AddVector : public raft::kernel
+class AddVector : public raft::parallel_k
 {
 public:
-    AddVector() : raft::kernel()
+    AddVector() : raft::parallel_k()
     {
+
         input.addPort<T>("addvec");
         output.addPort<F>("total");
     }
-    AddVector(const AddVector &other) : raft::kernel()
+    AddVector(const AddVector &other) : raft::parallel_k()
     {
         input.addPort<T>("addvec");
         output.addPort<F>("total");
@@ -35,6 +36,7 @@ public:
                 addVecTot += t[i].first[j];
             }
         }
+        input["addvec"].unpeek();
 
         auto c(output["total"].template allocate_s<F>());
         (*c) = addVecTot;

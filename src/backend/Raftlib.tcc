@@ -74,7 +74,7 @@ public:
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(stop - start);
         std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
-        this->stdvDev= sqrt(s.total/this->noOfPixels);
+        this->stdvDev = sqrt(s.total / this->noOfPixels);
     }
     double max();
     double min();
@@ -92,7 +92,7 @@ public:
     }
 
 private:
-    const int NUM_THREADS = 5;
+    const int NUM_THREADS = 4;
     int noOfPixels;
     T sumTotal;
     T stdvDev;
