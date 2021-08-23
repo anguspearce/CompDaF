@@ -11,14 +11,17 @@ template <typename T, typename F>
 class AddVector : public raft::parallel_k
 {
 public:
-    AddVector() : raft::parallel_k()
+    F &max;
+    F &min;
+    AddVector(F &max, F &min) : raft::parallel_k(), min(min), max(max)
     {
 
         input.addPort<T>("addvec");
         output.addPort<F>("total");
     }
-    AddVector(const AddVector &other) : raft::parallel_k()
+    AddVector(const AddVector &other) : raft::parallel_k(), min(other.min), max(other.max)
     {
+
         input.addPort<T>("addvec");
         output.addPort<F>("total");
     }
@@ -33,6 +36,15 @@ public:
         {
             for (int j = 0; j < t[i].first.size(); j++)
             {
+                if (t[i].first[j] < min)
+                {
+                    min = t[i].first[j];
+                }
+
+                if (t[i].first[j] > max)
+                {
+                    max = t[i].first[j];
+                }
                 addVecTot += t[i].first[j];
             }
         }

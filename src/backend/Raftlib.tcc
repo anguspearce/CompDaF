@@ -13,6 +13,8 @@
 #include <raft>
 #include <chrono>
 #include <cmath>
+#include <algorithm>
+#include <math.h>
 
 using namespace std::chrono;
 
@@ -33,8 +35,11 @@ public:
         using splitvec = SplitVector<type_v>;
         using addvec = AddVector<type_a, T>;
         using sum = Sum<T>;
+        this->max = -999999;
+        this->min = 999999;
+
         splitvec sp(NUM_THREADS);
-        addvec av;
+        addvec av(max, min);
         sum s(NUM_THREADS);
         raft::map m;
 
@@ -76,8 +81,11 @@ public:
         std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
         this->stdvDev = sqrt(s.total / this->noOfPixels);
     }
-    double max();
-    double min();
+    void calculateBins()
+    {
+        this->noOfBins = int(std::max(2.0, sqrt(this->noOfPixels)));
+    }
+
     T getSum()
     {
         return this->sumTotal;
@@ -90,6 +98,10 @@ public:
     {
         return this->stdvDev;
     }
+    T getBins()
+    {
+        return this->noOfBins;
+    }
 
 private:
     const int NUM_THREADS = 4;
@@ -97,6 +109,9 @@ private:
     T sumTotal;
     T stdvDev;
     T imgMean;
+    T max;
+    T min;
+    int noOfBins;
 };
 
 #endif
