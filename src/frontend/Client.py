@@ -108,6 +108,7 @@ class Client:
             print("Img Dimensions: ",msg.file_info_extended.dimensions)
             print("Image Width: ",msg.file_info_extended.width)
             print("Image Height: ",msg.file_info_extended.height)
+            print("Image Depth: ",msg.file_info_extended.depth)
             print("No of Header entries: ",len(msg.file_info_extended.header_entries))
         else:
             print("Failed to find file.")

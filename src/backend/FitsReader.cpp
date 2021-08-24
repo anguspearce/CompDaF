@@ -5,7 +5,7 @@ FitsReader::FitsReader(const std::string &filename)
     _filename = filename;
 }
 
-void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &fName, int64_t &fSize, int &naxis, int &width, int &height, std::vector<CARTA::HeaderEntry> &headerEntries, std::string &error)
+void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &fName, int64_t &fSize, int &naxis, long *naxes, std::vector<CARTA::HeaderEntry> &headerEntries, std::string &error)
 {
     //Opening fits file
     //fitsfile *fptr;
@@ -44,21 +44,43 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             key = "FILENAME";
             char name[70];
             fits_read_key(fptr, TSTRING, key.c_str(), name, comment, &status);
-            fName = name;
+            if (status)
+            {
 
+                error = "FITS error: FILENAME missing or false.";
+                fName = _filename.c_str();
+            }
+            else
+            {
+                fName = name;
+            }
             //File Size
             fSize = filesize(_filename.c_str());
 
             //Get Image dimensions
+            status = 0;
+            int bitpix;
+            //long naxes[3] = {1, 1, 1};
             fits_get_img_dim(fptr, &naxis, &status);
 
-            //Get image Width and Height
-            key = "NAXIS1";
-            fits_read_key(fptr, TINT, key.c_str(), &width, comment, &status);
+            if(naxis==2){
+                fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status);
+            }
+            else if(naxis==3){
+                
+                fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status);
+            }
+            //std::cout<<naxes[0]<<" "<<naxes[1]<<" "<< naxes[2]<<" "<<sizeof(naxes)/sizeof(naxes[0])<<std::endl;
+            // //Get image Width and Height
+            // key = "NAXIS1";
+            // fits_read_key(fptr, TINT, key.c_str(), &width, comment, &status);
 
-            key = "NAXIS2";
-            fits_read_key(fptr, TINT, key.c_str(), &height, comment, &status);
+            // key = "NAXIS2";
+            // fits_read_key(fptr, TINT, key.c_str(), &height, comment, &status);]
+            
 
+            //getting no of axes and dimensions and data type
+            
             //Get header entries
             int nKeys;
             char kComment[FLEN_CARD];

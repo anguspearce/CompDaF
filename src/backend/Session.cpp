@@ -38,14 +38,18 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     std::vector<std::string> hdu_list;
     std::string fName;
     int64_t fSize;
-    int naxis, width, height;
+    int naxis, width, height, depth;
+    long naxes[3] = {1, 1, 1};
+
     std::string messageOut;
     std::vector<CARTA::HeaderEntry> headerEntries;
     FitsReader fitsFile = FitsReader(filePath);
 
     //Getting file_info
-    fitsFile.FillFileInfo(hdu_list, fName, fSize, naxis, width, height, headerEntries, messageOut);
-
+    fitsFile.FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
+    width=naxes[0];
+    height=naxes[1];
+    depth=naxes[2];
     //File info
     CARTA::FileInfo file_info;
     file_info.set_name(fName);
@@ -58,6 +62,7 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     file_info_ext.set_dimensions(naxis);
     file_info_ext.set_width(width);
     file_info_ext.set_height(height);
+    file_info_ext.set_depth(depth);
     for (int i = 0; i < headerEntries.size(); i++)
     {
         auto header_entry = file_info_ext.add_header_entries();
@@ -74,8 +79,7 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
 
-
-    //Reading image pixels for region_histogram_data 
+    //Reading image pixels for region_histogram_data
     fitsFile.readImagePixels();
     //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }
