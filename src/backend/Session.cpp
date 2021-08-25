@@ -4,7 +4,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
 
-#include "Raftlib.h"
+#include "Raftlib.tcc"
 
 Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws) : _socket(ws)
 {

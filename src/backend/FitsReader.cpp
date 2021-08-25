@@ -83,47 +83,45 @@ void FitsReader::readImagePixels()
     //Reading image pixels into array
     long naxes[2] = {1, 1}, fpixel[2] = {1, 1};
     int bitpix, naxis, status = 0;
-    double *pixels;
+    float *pixels;
     fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status);
 
     //allocating memory for one row
-    pixels = (double *)malloc(naxes[0] * sizeof(double));
+    pixels = (float *)malloc(naxes[0] * sizeof(float));
 
     if (pixels == NULL)
     {
         printf("Memory allocation error\n");
     }
-    //double allP[naxes[1]][naxes[0]];
+
     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
     {
-        if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
+        if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL,
                           pixels, NULL, &status)) /* read row of pixels */
             break;                                /* jump out of loop on error */
-
+        std::vector<float> v;
         //This below code prints out each pixel with the row number
         //Is one way of accessing each pixel/row at a time
 
         // printf(" %4d ", fpixel[1]); /* print row number */
-        // for (int ii = 0; ii < naxes[0]; ii++)
-        //     std::cout << pixels[ii] << " "; /* print each value  */
-        // printf("\n");                       /* terminate line */
+        for (int ii = 0; ii < naxes[0]; ii++)
+            v.push_back(pixels[ii]);
+        // std::cout << pixels[ii] << " "; /* print each value  */
+        //printf("\n");                       /* terminate line */
+        imageData.push_back(v);
     }
+    std::cout << "Copied image data to array" << std::endl;
 
-    using ex_t = double;
-    /** data source & receiver container **/
-    std::vector<ex_t> v, o;
-    ex_t i(0);
-    /** fill container **/
-    auto func([&]()
-              { return (i++); });
-    while (i < 10)
-    {
-        v.emplace_back(func());
-    }
-    Raftlib raft;
-    raft.sum(v);
+    Raftlib<float> raft(naxes[1], naxes[0]);
+    raft.sum(imageData);
+    raft.mean();
+    raft.stdDev(imageData);
+    int noOfBins;
+    double binWidth;
+    std::vector<int> bins;
+    raft.getBins(noOfBins, binWidth, bins);
 
-    std::cout << " " << naxes[0] << " " << naxes[1] << std::endl;
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
