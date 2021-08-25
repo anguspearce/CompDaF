@@ -117,25 +117,6 @@ void FitsReader::readImagePixels()
         printf("Memory allocation error\n");
     }
 
-    // long imgSize = naxes[0] * naxes[1] * naxes[2];
-    // pixels = new float[imgSize];
-    // fits_read_pix(fptr, TFLOAT, fpixel, imgSize, NULL, pixels, NULL, &status);
-    // std::cout << imgSize << std::endl;
-
-    // for (long z = 128;  z < naxes[2]; z++)
-    // {
-    //     for (long y = 0;  y < naxes[1]; y++)
-    //     {
-    //         for (long x = 0;  x < naxes[0]; x++)
-    //         {
-    //             auto index=x+naxes[0] * y+(naxes[0]*naxes[1])*z;
-    //             std::cout<<pixels[index];
-    //         }
-    //         std::cout<<std::endl;
-    //     }
-    //     break;
-    // }
-    //std::cout<<naxes[2]<<std::endl;
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
     {
         //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
@@ -164,21 +145,8 @@ void FitsReader::readImagePixels()
             //printf("\n");                       /* terminate line */
             imageData.push_back(v);
         }
-        //break;
     }
-    // double tot = 0.0;
-    // for (int i = 0; i < imageData.size(); i++)
-    // {
-    //     for (int j = 0; j < imageData[i].size(); j++)
-    //     {
-    //         if (std::isfinite(imageData[i][j]))
-    //         {
-    //             std::cout << imageData[i][j];
-    //             tot += imageData[i][j];
-    //         }
-    //     }
-    //     std::cout << std::endl;
-    // }
+
     std::cout << "Copied image data to array" << std::endl;
 
     Raftlib<float> raft(naxes);
@@ -189,10 +157,9 @@ void FitsReader::readImagePixels()
     double binWidth;
     std::vector<int> bins;
     raft.getBins(noOfBins, binWidth, bins);
-    // for(int i=0;i<bins.size();i++){
-    //     std::cout<<bins[i]<<std::endl;
-    // }
-    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << std::endl;
+    float min,max;
+    raft.getMinAndMax(min, max);
+    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " <<min<<" Max: "<<max<< " FirstBinCenter: "<<raft.getBinCenter()<<std::endl;
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)

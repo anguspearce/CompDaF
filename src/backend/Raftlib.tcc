@@ -93,6 +93,7 @@ public:
     {
         this->noOfBins = int(std::max(2.0, sqrt((this->width*this->height))));
         this->binWidth = (this->max - this->min) / this->noOfBins;
+        this->firstBinCenter=this->min +(this->binWidth*0.5);
     }
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins)
     {
@@ -112,6 +113,14 @@ public:
     {
         return this->stdvDev;
     }
+    void getMinAndMax(T &imgMin,T &imgMax)
+    {
+        imgMin=this->min;
+        imgMax=this->max;
+    }
+    T getBinCenter(){
+        return this->firstBinCenter;
+    }
 
 private:
     const int NUM_THREADS = 5;
@@ -124,6 +133,7 @@ private:
     T imgMean;
     T max;
     T min;
+    T firstBinCenter;
     int noOfBins;
     double binWidth;
     std::vector<int> bins;
