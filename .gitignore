@@ -5,3 +5,8 @@ __pycache__
 build
 RaftLib
 *.fits
+daliuge_doxygen/
+Doxyfile
+*.palette
+*.xml
+*.log

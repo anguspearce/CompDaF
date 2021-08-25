@@ -1,41 +1,51 @@
 import dlg
 import pickle
+import numpy as np
 
+## 
+ # \file Daliuge.py 
 ##
-# @brief SleepApp\n
+# @brief SplitVector\n
 # @details An APP to play around with 
 # @par EAGLE_START
 # @param gitrepo $(GIT_REPO)
 # @param version $(PROJECT_VERSION)
 # @param category PythonApp
-# @param[in] param/sleepTime/5/Integer/readwrite
-#     \~English the number of seconds to sleep\n
-# @param[in] param/appclass/dlg.apps.simple.SleepApp/String/readonly
+# @param[in] param/data/null/ndarray
+#     \~English The array to split up and pass to sum\n
+# @param[in] param/appclass/src.backend.Daliuge.SplitVector/String
 #     \~English Application class\n
+# @param[out] port/array
+#     \~English Port receiving array or integer 
 
 # @par EAGLE_END
-class Daliuge(dlg.drop.BarrierAppDROP):
+class SplitVector(dlg.drop.BarrierAppDROP):
     def initialise(self, data):
         self.data = data
 
-    def run():
+    def run(self):
         #Application Logic
-        print("Define logic")
+        outs = 0
+        arrs = np.split(self.data, 4)
+        for out in self.outputs:
+            out.write(arrs[outs])
+            outs += 1
+
         
 
 ##
-# @brief SleepApp\n
-# @details A simple APP that sleeps the specified amount of time (0 by default).
-# This is mainly useful (and used) to test graph translation and structure
-# without executing real algorithms. Very useful for debugging.
+# @brief SumApp\n
+# @details A Sum App that takes in vectors or integers and adds them all together
 # @par EAGLE_START
 # @param gitrepo $(GIT_REPO)
 # @param version $(PROJECT_VERSION)
 # @param category PythonApp
-# @param[in] param/sleepTime/5/Integer/readwrite
-#     \~English the number of seconds to sleep\n
-# @param[in] param/appclass/dlg.apps.simple.SleepApp/String/readonly
+# @param[in] param/appclass/src.backend.Daliuge.Sum/String
 #     \~English Application class\n
+# @param[in] port/array
+#     \~English Port receiving array or integer 
+# @param[out] port/Integer
+#     \~English Port outputs integer total
 
 # @par EAGLE_END
 class Sum(dlg.drop.AppDROP):
@@ -50,6 +60,36 @@ class Sum(dlg.drop.AppDROP):
             if isinstance(inputDrop, dlg.drop.ContainerDROP):
                 for child in inputDrop.children:
                     total += child
+            else:
+                total += inputDrop
+        self.outputs.write(total)
         
-        
+##
+# @brief SumAllApp\n
+# @details SumAll App that takes in the other sum totals and adds together
+# @par EAGLE_START
+# @param gitrepo $(GIT_REPO)
+# @param version $(PROJECT_VERSION)
+# @param category PythonApp
+# @param[in] param/appclass/src.backend.Daliuge.SumAll/String
+#     \~English Application class\n
+# @param[in] port/Integer
+#     \~English Port receiving Integers to add up
+
+# @par EAGLE_END
+class SumAll(dlg.drop.AppDROP):
+    
+    compontent_meta = dlg.meta.dlg_component('SumAllApp', 'SumAll App.',
+                                    [dlg.meta.dlg_batch_input('binary/*', [])],
+                                    [dlg.meta.dlg_batch_output('binary/*', [])],
+                                    [dlg.meta.dlg_streaming_input('binary/*')])
+    def run(self):
+        total = 0;
+        for inputDrop in self.inputs:
+            if isinstance(inputDrop, dlg.drop.ContainerDROP):
+                for child in inputDrop.children:
+                    total += child
+            else:
+                total += inputDrop
+        print(total)
         
