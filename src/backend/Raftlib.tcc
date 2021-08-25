@@ -22,9 +22,12 @@ template <typename T>
 class Raftlib
 {
 public:
-    Raftlib(int height, int width)
+    Raftlib(long *naxes)
     {
-        this->noOfPixels = height * width;
+        this->width=naxes[0];
+        this->height=naxes[1];
+        this->depth=naxes[2];
+        //this->noOfPixels = naxes[0] * naxes[1] *naxes[2];
         this->sumTotal = 0;
     }
     void sum(std::vector<std::vector<T>> &vec)
@@ -44,8 +47,10 @@ public:
         raft::map m;
 
         auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
+        
         m += readeachone >> sp;
         m += sp <= av >= s;
+        
         auto start = high_resolution_clock::now();
 
         m.exe();
@@ -56,7 +61,7 @@ public:
     }
     void mean()
     {
-        this->imgMean = this->sumTotal / this->noOfPixels;
+        this->imgMean = this->sumTotal / (this->width*this->height*this->depth);
     }
     void stdDev(std::vector<std::vector<T>> &vec)
     {
@@ -82,11 +87,11 @@ public:
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<microseconds>(stop - start);
         std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
-        this->stdvDev = sqrt(s.total / this->noOfPixels);
+        this->stdvDev = sqrt(s.total / (this->width*this->height*this->depth));
     }
     void calculateBins()
     {
-        this->noOfBins = int(std::max(2.0, sqrt(this->noOfPixels)));
+        this->noOfBins = int(std::max(2.0, sqrt((this->width*this->height))));
         this->binWidth = (this->max - this->min) / this->noOfBins;
     }
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins)
@@ -109,8 +114,11 @@ public:
     }
 
 private:
-    const int NUM_THREADS = 4;
-    int noOfPixels;
+    const int NUM_THREADS = 5;
+    //long noOfPixels;
+    long width;
+    long height;
+    long depth;
     T sumTotal;
     T stdvDev;
     T imgMean;

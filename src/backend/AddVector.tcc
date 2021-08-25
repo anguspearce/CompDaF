@@ -29,6 +29,7 @@ public:
     {
         //T t;
 
+
         //input["addvec"].template pop(t);
         auto &t(input["addvec"].template peek<T>());
         F addVecTot = 0;
@@ -36,6 +37,7 @@ public:
         {
             for (int j = 0; j < t[i].first.size(); j++)
             {
+                //std::cout<<"test"<<std::endl;
                 if (t[i].first[j] < min)
                 {
                     min = t[i].first[j];
