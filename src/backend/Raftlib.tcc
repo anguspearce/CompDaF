@@ -109,7 +109,7 @@ public:
     }
 
 private:
-    const int NUM_THREADS = 4;
+    const int NUM_THREADS = 8;
     int noOfPixels;
     T sumTotal;
     T stdvDev;
