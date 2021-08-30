@@ -79,7 +79,18 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
 
     //Reading image pixels for region_histogram_data
-    fitsFile.readImagePixels();
+    CARTA::RegionHistogramData regionHistoData;
+    regionHistoData.set_file_id(file_id);
+    regionHistoData.set_region_id(-1);
+
+    fitsFile.readImagePixels(regionHistoData);
+
+    std::cout<<"\nBin Width "<<regionHistoData.histograms()[0].bin_width() <<std::endl;
+    std::cout<<"No of Bins "<<regionHistoData.histograms()[0].num_bins() <<std::endl;
+    std::cout<<"Mean: "<<regionHistoData.histograms()[0].mean() <<std::endl;
+    std::cout<<"Stdv Dev: "<<regionHistoData.histograms()[0].std_dev() <<std::endl;
+
+
     //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }
 

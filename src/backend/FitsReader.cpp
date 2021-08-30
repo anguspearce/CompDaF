@@ -101,7 +101,7 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
         }
     }
 }
-void FitsReader::readImagePixels()
+void FitsReader::readImagePixels(CARTA::RegionHistogramData &regionHistoData)
 {
     //Reading image pixels into array
     long naxes[3] = {1, 1, 1}, fpixel[3] = {1, 1, 1};
@@ -157,9 +157,20 @@ void FitsReader::readImagePixels()
     double binWidth;
     std::vector<int> bins;
     raft.getBins(noOfBins, binWidth, bins);
-    float min,max;
+    float min, max;
     raft.getMinAndMax(min, max);
-    std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " <<min<<" Max: "<<max<< " FirstBinCenter: "<<raft.getBinCenter()<<std::endl;
+    //std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " << min << " Max: " << max << " FirstBinCenter: " << raft.getBinCenter() << std::endl;
+
+    //setting histogram data
+    auto message_histogram = regionHistoData.add_histograms();
+    message_histogram->set_channel(-1);
+    message_histogram->set_num_bins(noOfBins);
+    message_histogram->set_bin_width(binWidth);
+    message_histogram->set_first_bin_center(raft.getBinCenter());
+    message_histogram->set_mean(raft.getMean());
+    message_histogram->set_std_dev(raft.getStdv());
+    *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
+
     fits_close_file(fptr, &status);
 }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
