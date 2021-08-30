@@ -4,7 +4,6 @@
 #include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
 
-
 Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws) : _socket(ws)
 {
     _connected = true;
@@ -46,9 +45,9 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
 
     //Getting file_info
     fitsFile.FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
-    width=naxes[0];
-    height=naxes[1];
-    depth=naxes[2];
+    width = naxes[0];
+    height = naxes[1];
+    depth = naxes[2];
     //File info
     CARTA::FileInfo file_info;
     file_info.set_name(fName);
@@ -78,18 +77,29 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
 
+    fitsFile.readImagePixels();
+
     //Reading image pixels for region_histogram_data
-    CARTA::RegionHistogramData regionHistoData;
+    CARTA::RegionHistogramData &regionHistoData = fitsFile.getRegionHistoData();
     regionHistoData.set_file_id(file_id);
     regionHistoData.set_region_id(-1);
 
-    fitsFile.readImagePixels(regionHistoData);
+    //Region statistics data
+    CARTA::RegionStatsData &regionStatsData = fitsFile.getRegionStatsData();
+    regionStatsData.set_file_id(file_id);
+    regionStatsData.set_region_id(-1);
+    
+    std::cout << "\nBin Width " << regionHistoData.histograms()[0].bin_width() << std::endl;
+    std::cout << "No of Bins " << regionHistoData.histograms()[0].num_bins() << std::endl;
+    std::cout << "Mean: " << regionHistoData.histograms()[0].mean() << std::endl;
+    std::cout << "Stdv Dev: " << regionHistoData.histograms()[0].std_dev() << std::endl;
 
-    std::cout<<"\nBin Width "<<regionHistoData.histograms()[0].bin_width() <<std::endl;
-    std::cout<<"No of Bins "<<regionHistoData.histograms()[0].num_bins() <<std::endl;
-    std::cout<<"Mean: "<<regionHistoData.histograms()[0].mean() <<std::endl;
-    std::cout<<"Stdv Dev: "<<regionHistoData.histograms()[0].std_dev() <<std::endl;
-
+    std::cout << "\nNumPixels: " << regionStatsData.statistics()[0].value() << std::endl;
+    std::cout << "Sum: " << regionStatsData.statistics()[1].value() << std::endl;
+    std::cout << "Mean: " << regionStatsData.statistics()[2].value() << std::endl;
+    std::cout << "Stdv Dev: " << regionStatsData.statistics()[3].value() << std::endl;
+    std::cout << "Min: " << regionStatsData.statistics()[4].value() << std::endl;
+    std::cout << "Max: " << regionStatsData.statistics()[5].value() << std::endl;
 
     //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }

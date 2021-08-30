@@ -100,12 +100,17 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             }
         }
     }
+        fits_close_file(fptr, &status);
+
 }
-void FitsReader::readImagePixels(CARTA::RegionHistogramData &regionHistoData)
+void FitsReader::readImagePixels()
 {
+    int status = 0;
+    fits_open_file(&fptr, _filename.c_str(), READONLY, &status);
     //Reading image pixels into array
     long naxes[3] = {1, 1, 1}, fpixel[3] = {1, 1, 1};
-    int bitpix, naxis, status = 0;
+    int bitpix, naxis;
+    status = 0;
     float *pixels;
     fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status);
 
@@ -171,8 +176,34 @@ void FitsReader::readImagePixels(CARTA::RegionHistogramData &regionHistoData)
     message_histogram->set_std_dev(raft.getStdv());
     *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
 
+    //setting statistics data
+    auto numPixelsValue=regionStatsData.add_statistics();
+    numPixelsValue->set_value(naxes[0]*naxes[1]*naxes[2]);
+    numPixelsValue->set_stats_type(CARTA::StatsType::NumPixels);
+    auto sumValue=regionStatsData.add_statistics();
+    sumValue->set_value(raft.getSum());
+    sumValue->set_stats_type(CARTA::StatsType::Sum);
+    auto meanValue=regionStatsData.add_statistics();
+    meanValue->set_value(raft.getMean());
+    meanValue->set_stats_type(CARTA::StatsType::Mean);
+    auto stdvValue=regionStatsData.add_statistics();
+    stdvValue->set_value(raft.getStdv());
+    stdvValue->set_stats_type(CARTA::StatsType::Sigma);
+    auto minValue=regionStatsData.add_statistics();
+    minValue->set_value(min);
+    minValue->set_stats_type(CARTA::StatsType::Min);
+    auto maxValue=regionStatsData.add_statistics();
+    maxValue->set_value(max);
+    maxValue->set_stats_type(CARTA::StatsType::Max);
+
     fits_close_file(fptr, &status);
 }
+CARTA::RegionHistogramData& FitsReader::getRegionHistoData(){
+    return regionHistoData;
+}
+    CARTA::RegionStatsData& FitsReader::getRegionStatsData(){
+        return regionStatsData;
+    }
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
