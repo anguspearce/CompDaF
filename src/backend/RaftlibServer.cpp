@@ -4,7 +4,7 @@
 
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/open_file.pb.h>
-
+#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/enums.pb.h>
 #include "Session.h"
 
@@ -12,34 +12,32 @@
 
 //#include "Raftlib.tcc"
 
-
-class RaftlibServer {
+class RaftlibServer
+{
 public:
     /* ws->getUserData returns one of these */
-    
-    Session* s;
+
+    Session *s;
 
     /**
      * Method creates uWebSocket App with declared settings and calls the relevant handler functions.
      * 
      * 
-     */ 
+     */
     void run()
     {
         uWS::App().ws<PerSocketData>("/*", {/* Settings */
-            .compression = uWS::DEDICATED_COMPRESSOR_256KB,
-            .maxPayloadLength = 16 * 1024 * 1024,
-            .open = [&](uWS::WebSocket<false, true, PerSocketData>* ws)
-            {
-                OnConnect(ws);
-            /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */ 
-            },
-            .message = [&](uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode)
-            {
-                OnMessage(ws, message, opCode);
-            },                                            
-            .close = [](auto * /*ws*/, int /*code*/, std::string_view /*message*/)
-            {
+                                            .compression = uWS::DEDICATED_COMPRESSOR_256KB,
+                                            .maxPayloadLength = 16 * 1024 * 1024,
+                                            .open = [&](uWS::WebSocket<false, true, PerSocketData> *ws)
+                                            {
+                                                OnConnect(ws);
+                                                /* Open event here, you may access ws->getUserData() which points to a PerSocketData struct */
+                                            },
+                                            .message = [&](uWS::WebSocket<false, true, PerSocketData> *ws, std::string_view message, uWS::OpCode opCode)
+                                            { OnMessage(ws, message, opCode); },
+                                            .close = [](auto * /*ws*/, int /*code*/, std::string_view /*message*/)
+                                            {
             /* You may access ws->getUserData() here */ }})
             .listen(9001, [](auto *listen_socket)
                     {
@@ -50,20 +48,20 @@ public:
                     })
             .run();
     }
-    
+
     /**
      * Sets up session when a new client connects.
      * 
      * 
      * @param ws The websocket of the new connection
      */
-    void OnConnect(uWS::WebSocket<false, true, PerSocketData>* ws){
+    void OnConnect(uWS::WebSocket<false, true, PerSocketData> *ws)
+    {
         auto socket_data = ws->getUserData();
 
         uint32_t session_id = socket_data->session_id;
         std::string address = socket_data->address;
         s = new Session(ws);
-
     }
 
     /**
@@ -74,7 +72,8 @@ public:
      * @param message The message received
      * @param opCode 
      */
-    void OnMessage(uWS::WebSocket<false, true, PerSocketData>* ws, std::string_view message, uWS::OpCode opCode){
+    void OnMessage(uWS::WebSocket<false, true, PerSocketData> *ws, std::string_view message, uWS::OpCode opCode)
+    {
         if (message.length() >= sizeof(carta::EventHeader))
         {
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader *>(message.data());
@@ -85,29 +84,49 @@ public:
 
             switch (head.type)
             {
-                case CARTA::EventType::REGISTER_VIEWER:
-                {
-                    CARTA::RegisterViewer message;
+            case CARTA::EventType::REGISTER_VIEWER:
+            {
+                CARTA::RegisterViewer message;
 
-                    if (message.ParseFromArray(event_buf, event_length))
-                    {
-                        s->OnRegisterViewer(message,head.icd_version, head.request_id);
-                        // session->OnRegisterViewer(message, head.icd_version, head.request_id);
-                    }
-                    else
-                    {
-                        std::cout << "BAD" << std::endl;
-                    }
-                    break;
-                }
-                case CARTA::EventType::OPEN_FILE:
+                if (message.ParseFromArray(event_buf, event_length))
                 {
-                    CARTA::OpenFile message;
-
-                    if(message.ParseFromArray(event_buf,event_length)){
-                        s->OnOpenFile(message,head.request_id);
-                    }
+                    s->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    // session->OnRegisterViewer(message, head.icd_version, head.request_id);
                 }
+                else
+                {
+                    std::cout << "BAD" << std::endl;
+                }
+                break;
+            }
+            case CARTA::EventType::OPEN_FILE:
+            {
+                CARTA::OpenFile message;
+
+                if (message.ParseFromArray(event_buf, event_length))
+                {
+                    s->OnOpenFile(message, head.request_id);
+                }
+                break;
+            }
+            case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS:
+            {
+                CARTA::SetHistogramRequirements message;
+                if (message.ParseFromArray(event_buf, event_length))
+                {
+                    s->OnSetRegionHistogramRequirements(message, head.request_id);
+                }
+                break;
+            }
+            case CARTA::EventType::SET_STATS_REQUIREMENTS:
+            {
+                CARTA::SetStatsRequirements message;
+                if (message.ParseFromArray(event_buf, event_length))
+                {
+                    s->OnSetRegionStatsRequirements(message, head.request_id);
+                }
+                break;
+            }
             }
         }
         //ws->send(message, opCode, true);

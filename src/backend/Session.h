@@ -16,7 +16,8 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
-
+#include <carta-protobuf/region_requirements.pb.h>
+#include "FitsReader.h"
 #include "fitsio.h"
 
 struct PerSocketData
@@ -33,7 +34,8 @@ public:
     // CARTA ICD
     void OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t icd_version, uint32_t request_id);
     void OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id);
-
+    void OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirements &message, uint32_t request_id);
+    void OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &message, uint32_t request_id);
     // Sending Protobuf Messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite &message, bool compress = true);
 
@@ -44,4 +46,5 @@ public:
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     bool _connected;
+    FitsReader *fitsFile;
 };

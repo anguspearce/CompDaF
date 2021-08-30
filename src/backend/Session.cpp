@@ -1,5 +1,4 @@
 #include "Session.h"
-#include "FitsReader.h"
 
 #include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
@@ -31,79 +30,84 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     const auto &fileName = message.file();
     auto file_id(message.file_id());
     std::string filePath = directory + fileName;
-    bool success(true);
-
-    std::vector<std::string> hdu_list;
-    std::string fName;
-    int64_t fSize;
-    int naxis, width, height, depth;
-    long naxes[3] = {1, 1, 1};
-
-    std::string messageOut;
-    std::vector<CARTA::HeaderEntry> headerEntries;
-    FitsReader fitsFile = FitsReader(filePath);
-
-    //Getting file_info
-    fitsFile.FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
-    width = naxes[0];
-    height = naxes[1];
-    depth = naxes[2];
-    //File info
     CARTA::FileInfo file_info;
-    file_info.set_name(fName);
-    file_info.set_size(fSize);
-    file_info.set_type(CARTA::FileType::FITS);
-    file_info.add_hdu_list(hdu_list[0]);
-
-    //File info extended
     CARTA::FileInfoExtended file_info_ext;
-    file_info_ext.set_dimensions(naxis);
-    file_info_ext.set_width(width);
-    file_info_ext.set_height(height);
-    file_info_ext.set_depth(depth);
-    for (int i = 0; i < headerEntries.size(); i++)
-    {
-        auto header_entry = file_info_ext.add_header_entries();
-        header_entry->set_name(headerEntries[i].name());
-        header_entry->set_value(headerEntries[i].value());
-        header_entry->set_comment(headerEntries[i].comment());
-    }
 
+    //check if file exists
+    bool success(false);
+    std::ifstream f(filePath.c_str());
+    if (f.good())
+    {
+        success = true;
+
+        std::vector<std::string> hdu_list;
+        std::string fName;
+        int64_t fSize;
+        int naxis, width, height, depth;
+        long naxes[3] = {1, 1, 1};
+
+        std::string messageOut;
+        std::vector<CARTA::HeaderEntry> headerEntries;
+        fitsFile = new FitsReader(filePath);
+
+        //Getting file_info
+        fitsFile->FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
+        width = naxes[0];
+        height = naxes[1];
+        depth = naxes[2];
+        //File info
+
+        file_info.set_name(fName);
+        file_info.set_size(fSize);
+        file_info.set_type(CARTA::FileType::FITS);
+        file_info.add_hdu_list(hdu_list[0]);
+
+        //File info extended
+        file_info_ext.set_dimensions(naxis);
+        file_info_ext.set_width(width);
+        file_info_ext.set_height(height);
+        file_info_ext.set_depth(depth);
+        for (int i = 0; i < headerEntries.size(); i++)
+        {
+            auto header_entry = file_info_ext.add_header_entries();
+            header_entry->set_name(headerEntries[i].name());
+            header_entry->set_value(headerEntries[i].value());
+            header_entry->set_comment(headerEntries[i].comment());
+        }
+        fitsFile->readImagePixels();
+    }
     CARTA::OpenFileAck ack_message;
     ack_message.set_success(success);
     ack_message.set_file_id(file_id);
     *ack_message.mutable_file_info() = file_info;
     *ack_message.mutable_file_info_extended() = file_info_ext;
+
+    
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
+    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
+}
+void Session::OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirements &message, uint32_t request_id)
+{
 
-    fitsFile.readImagePixels();
-
+    auto file_id(message.file_id());
     //Reading image pixels for region_histogram_data
-    CARTA::RegionHistogramData &regionHistoData = fitsFile.getRegionHistoData();
+    CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
     regionHistoData.set_file_id(file_id);
     regionHistoData.set_region_id(-1);
 
+    SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
+}
+void Session::OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &message, uint32_t request_id)
+{
+    auto file_id(message.file_id());
     //Region statistics data
-    CARTA::RegionStatsData &regionStatsData = fitsFile.getRegionStatsData();
+    CARTA::RegionStatsData &regionStatsData = fitsFile->getRegionStatsData();
     regionStatsData.set_file_id(file_id);
     regionStatsData.set_region_id(-1);
-    
-    std::cout << "\nBin Width " << regionHistoData.histograms()[0].bin_width() << std::endl;
-    std::cout << "No of Bins " << regionHistoData.histograms()[0].num_bins() << std::endl;
-    std::cout << "Mean: " << regionHistoData.histograms()[0].mean() << std::endl;
-    std::cout << "Stdv Dev: " << regionHistoData.histograms()[0].std_dev() << std::endl;
 
-    std::cout << "\nNumPixels: " << regionStatsData.statistics()[0].value() << std::endl;
-    std::cout << "Sum: " << regionStatsData.statistics()[1].value() << std::endl;
-    std::cout << "Mean: " << regionStatsData.statistics()[2].value() << std::endl;
-    std::cout << "Stdv Dev: " << regionStatsData.statistics()[3].value() << std::endl;
-    std::cout << "Min: " << regionStatsData.statistics()[4].value() << std::endl;
-    std::cout << "Max: " << regionStatsData.statistics()[5].value() << std::endl;
-
-    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
+    SendEvent(CARTA::EventType::REGION_STATS_DATA, request_id, regionStatsData);
 }
-
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite &message, bool compress)
 {
     size_t message_length = message.ByteSizeLong();

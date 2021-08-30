@@ -108,7 +108,7 @@ def construct_open_file_ack():
     return (message, message_type)
 
 
-def construct_set_histogram_requirements(num_bins):
+def construct_set_histogram_requirements():
     """Construct a SET_HISTOGRAM_REQUIREMENTS message.
 
     :param num_bins:  the number of bins for the histogram
@@ -121,7 +121,7 @@ def construct_set_histogram_requirements(num_bins):
     message.region_id = -1
     histogram_config = region_requirements_pb2.SetHistogramRequirements.HistogramConfig()
     histogram_config.channel = -1
-    histogram_config.num_bins = num_bins
+    histogram_config.num_bins = -1
     message.histograms.append(histogram_config)
     return (message, message_type)
 
