@@ -121,14 +121,14 @@ void FitsReader::readImagePixels()
     {
         printf("Memory allocation error\n");
     }
-
+    long totPixels=0;
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
     {
         //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
         for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
         {
             status = 0;
-            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], 0, pixels, 0, &status)) /* read row of pixels */
+            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
             {
                 std::cout << "error" << std::endl;
                 break; /* jump out of loop on error */
@@ -142,19 +142,20 @@ void FitsReader::readImagePixels()
             {
                 if (std::isfinite(pixels[ii]))
                 {
+                    totPixels+=1;
                     v.push_back(pixels[ii]);
                 }
             }
-
             // std::cout << pixels[ii] << " "; /* print each value  */
             //printf("\n");                       /* terminate line */
             imageData.push_back(v);
         }
     }
+            //std::cout<<totPixels<<std::endl;
 
     std::cout << "\nCopied image data to array" << std::endl;
 
-    Raftlib<float> raft(naxes);
+    Raftlib<float> raft(naxes,totPixels);
     raft.sum(imageData);
     raft.mean();
     raft.stdDev(imageData);
@@ -178,7 +179,7 @@ void FitsReader::readImagePixels()
 
     //setting statistics data
     auto numPixelsValue=regionStatsData.add_statistics();
-    numPixelsValue->set_value(naxes[0]*naxes[1]*naxes[2]);
+    numPixelsValue->set_value(totPixels);
     numPixelsValue->set_stats_type(CARTA::StatsType::NumPixels);
     auto sumValue=regionStatsData.add_statistics();
     sumValue->set_value(raft.getSum());

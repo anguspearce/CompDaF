@@ -6,12 +6,12 @@
 using namespace std::chrono;
 
 template <typename T>
-Raftlib<T>::Raftlib(long *naxes)
+Raftlib<T>::Raftlib(long *naxes,long totPixels)
 {
     this->width = naxes[0];
     this->height = naxes[1];
     this->depth = naxes[2];
-    //this->noOfPixels = naxes[0] * naxes[1] *naxes[2];
+    this->noOfPixels = totPixels;
     this->sumTotal = 0;
 }
 template <typename T>
@@ -41,13 +41,13 @@ void Raftlib<T>::sum(std::vector<std::vector<T>> &vec)
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << "Raft Sum Time: " << duration.count() << std::endl;
+    //std::cout << "Raft Sum Time: " << duration.count() << std::endl;
     this->sumTotal = s.total;
 }
 template <typename T>
 void Raftlib<T>::mean()
 {
-    this->imgMean = this->sumTotal / (this->width * this->height * this->depth);
+    this->imgMean = this->sumTotal / this->noOfPixels;
 }
 template <typename T>
 void Raftlib<T>::stdDev(std::vector<std::vector<T>> &vec)
@@ -73,8 +73,8 @@ void Raftlib<T>::stdDev(std::vector<std::vector<T>> &vec)
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
-    this->stdvDev = sqrt(s.total / (this->width * this->height * this->depth));
+    //std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
+    this->stdvDev = sqrt(s.total / (this->noOfPixels-1));
 }
 template <typename T>
 void Raftlib<T>::calculateBins()

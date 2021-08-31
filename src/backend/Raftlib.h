@@ -21,7 +21,7 @@ template <typename T>
 class Raftlib
 {
 public:
-    Raftlib(long *naxes);
+    Raftlib(long *naxes,long totPixels);
     void sum(std::vector<std::vector<T>> &vec);
     void mean();
     void stdDev(std::vector<std::vector<T>> &vec);
@@ -35,7 +35,7 @@ public:
 
 private:
     const int NUM_THREADS = 5;
-    //long noOfPixels;
+    long noOfPixels;
     long width;
     long height;
     long depth;
