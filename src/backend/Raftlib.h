@@ -8,6 +8,7 @@
 #include "AddVector.h"
 #include "StdvVector.h"
 #include "Sum.h"
+#include "MergeBins.h"
 
 #include <raft>
 #include <chrono>
@@ -22,9 +23,10 @@ class Raftlib
 {
 public:
     Raftlib(long *naxes,long totPixels);
-    void sum(std::vector<std::vector<T>> &vec);
+    void statistics(std::vector<std::vector<T>> &vec);
     void mean();
-    void stdDev(std::vector<std::vector<T>> &vec);
+    void calcStdv();
+    void histogram(std::vector<std::vector<T>> &vec);
     void calculateBins();
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins);
     T getSum();
@@ -41,6 +43,7 @@ private:
     long depth;
     T sumTotal;
     T stdvDev;
+    T sumsquares;
     T imgMean;
     T max;
     T min;

@@ -14,7 +14,7 @@
 #include <carta-protobuf/region_stats.pb.h>
 
 #include "Raftlib.h"
-
+#include <map>
 class FitsReader
 {
 public:

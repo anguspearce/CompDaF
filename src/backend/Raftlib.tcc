@@ -15,7 +15,7 @@ Raftlib<T>::Raftlib(long *naxes,long totPixels)
     this->sumTotal = 0;
 }
 template <typename T>
-void Raftlib<T>::sum(std::vector<std::vector<T>> &vec)
+void Raftlib<T>::statistics(std::vector<std::vector<T>> &vec)
 {
 
     using type_v = std::vector<T>;
@@ -41,8 +41,9 @@ void Raftlib<T>::sum(std::vector<std::vector<T>> &vec)
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    //std::cout << "Raft Sum Time: " << duration.count() << std::endl;
+    std::cout << "Raft Statistics Time: " << duration.count() << std::endl;
     this->sumTotal = s.total;
+    this->sumsquares=s.sumSquaresTotal;
 }
 template <typename T>
 void Raftlib<T>::mean()
@@ -50,31 +51,36 @@ void Raftlib<T>::mean()
     this->imgMean = this->sumTotal / this->noOfPixels;
 }
 template <typename T>
-void Raftlib<T>::stdDev(std::vector<std::vector<T>> &vec)
+void Raftlib<T>::calcStdv()
+{
+    this->stdvDev=sqrt((this->sumsquares/this->noOfPixels)-(this->imgMean*this->imgMean));
+}
+template <typename T>
+void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
 {
     using type_v = std::vector<T>;
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
     using splitvec = SplitVector<type_v>;
     using stdvvec = StdvVector<type_a, T>;
-    using sum = Sum<T>;
+    using mergebins = MergeBins<T>;
     calculateBins();
     std::vector<int> lbins(this->noOfBins, 0);
     this->bins = lbins;
     splitvec sp(NUM_THREADS);
-    stdvvec sv(getMean(), bins, this->min, this->binWidth);
-    sum s(NUM_THREADS);
+    stdvvec sv(getMean(), this->min, this->binWidth);
+    mergebins mb(bins,NUM_THREADS);
     raft::map m;
 
     auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
     m += readeachone >> sp;
-    m += sp <= sv >= s;
+    m += sp <= sv >= mb;
     auto start = high_resolution_clock::now();
 
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    //std::cout << "Raft Stdv Time: " << duration.count() << std::endl;
-    this->stdvDev = sqrt(s.total / (this->noOfPixels-1));
+    std::cout << "Raft Histogram Time: " << duration.count() << std::endl;
+    //this->stdvDev = sqrt(s.total / (this->noOfPixels-1));
 }
 template <typename T>
 void Raftlib<T>::calculateBins()

@@ -1,5 +1,5 @@
-#ifndef SUM_H
-#define SUM_H
+#ifndef MERGEBINS_H
+#define MERGEBINS_H
 #include <cassert>
 #include <iostream>
 #include <cstdint>
@@ -12,14 +12,13 @@
 #include <numeric>
 
 template <typename T>
-class Sum : public raft::parallel_k
+class MergeBins : public raft::parallel_k
 {
 public:
-    T total;
-    T sumSquaresTotal;
-    Sum(const std::size_t n_input_ports = 1);
+    std::vector<int> &bins;
+    MergeBins(std::vector<int> &bins,const std::size_t n_input_ports = 1);
 
     virtual raft::kstatus run();
 };
-#include "Sum.tcc"
+#include "MergeBins.tcc"
 #endif

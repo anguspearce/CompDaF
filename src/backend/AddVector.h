@@ -10,7 +10,7 @@
 #include "Raftlib.h"
 
 template <typename T, typename F>
-class AddVector : public raft::parallel_k
+class AddVector : public raft::kernel
 {
 public:
     F &max;

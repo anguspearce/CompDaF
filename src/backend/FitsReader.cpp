@@ -156,9 +156,12 @@ void FitsReader::readImagePixels()
     std::cout << "\nCopied image data to array" << std::endl;
 
     Raftlib<float> raft(naxes,totPixels);
-    raft.sum(imageData);
+    raft.statistics(imageData);
     raft.mean();
-    raft.stdDev(imageData);
+    raft.calcStdv();
+    raft.calculateBins();
+    raft.histogram(imageData);
+    //raft.stdDev(imageData);
     int noOfBins;
     double binWidth;
     std::vector<int> bins;
@@ -166,6 +169,7 @@ void FitsReader::readImagePixels()
     float min, max;
     raft.getMinAndMax(min, max);
     //std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " << min << " Max: " << max << " FirstBinCenter: " << raft.getBinCenter() << std::endl;
+
 
     //setting histogram data
     auto message_histogram = regionHistoData.add_histograms();

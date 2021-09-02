@@ -8,7 +8,7 @@ Sum<T>::Sum(const std::size_t n_input_ports) : raft::parallel_k()
     this->total = 0;
     for (auto i(0); i < n_input_ports; i++)
     {
-        addPortTo<T>(input);
+        addPortTo<std::vector<T>>(input);
     }
     //input.template addPort<T>("a");
 };
@@ -23,8 +23,9 @@ raft::kstatus Sum<T>::run()
         {
             //T a;
             //port.pop(a);
-            auto &a(port.template peek<T>());
-            total += a;
+            auto &a(port.template peek<std::vector<T>>());
+            total += a[0];
+            sumSquaresTotal+=a[1];
             port.unpeek();
 
             port.recycle();

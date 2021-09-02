@@ -2,19 +2,19 @@
 #define ADDVECTOR_TCC
 
 template <typename T, typename F>
-AddVector<T, F>::AddVector(F &max, F &min) : raft::parallel_k(), min(min), max(max)
+AddVector<T, F>::AddVector(F &max, F &min) : raft::kernel(), min(min), max(max)
 {
 
     input.addPort<T>("addvec");
-    output.addPort<F>("total");
+    output.addPort<std::vector<F>>("total");
 }
 
 template <typename T, typename F>
-AddVector<T, F>::AddVector(const AddVector &other) : raft::parallel_k(), min(other.min), max(other.max)
+AddVector<T, F>::AddVector(const AddVector &other) : raft::kernel(), min(other.min), max(other.max)
 {
 
     input.addPort<T>("addvec");
-    output.addPort<F>("total");
+    output.addPort<std::vector<F>>("total");
 }
 
 template <typename T, typename F>
@@ -25,6 +25,7 @@ raft::kstatus AddVector<T, F>::run()
     //input["addvec"].template pop(t);
     auto &t(input["addvec"].template peek<T>());
     F addVecTot = 0;
+    std::vector<F> totals={0,0};
     for (int i = 0; i < t.size(); i++)
     {
         for (int j = 0; j < t[i].first.size(); j++)
@@ -39,13 +40,14 @@ raft::kstatus AddVector<T, F>::run()
             {
                 max = t[i].first[j];
             }
-            addVecTot += t[i].first[j];
+            totals[0] += t[i].first[j];
+            totals[1]+= (t[i].first[j]*t[i].first[j]);
         }
     }
     input["addvec"].unpeek();
 
-    auto c(output["total"].template allocate_s<F>());
-    (*c) = addVecTot;
+    auto c(output["total"].template allocate_s<std::vector<F>>());
+    (*c) = totals;
 
     output["total"].send();
     input["addvec"].recycle(1);
