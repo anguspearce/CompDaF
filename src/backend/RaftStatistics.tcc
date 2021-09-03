@@ -1,8 +1,8 @@
-#ifndef ADDVECTOR_TCC
-#define ADDVECTOR_TCC
+#ifndef RAFTSTATISTICS_TCC
+#define RAFTSTATISTICS_TCC
 
 template <typename T, typename F>
-AddVector<T, F>::AddVector(F &max, F &min) : raft::kernel(), min(min), max(max)
+RaftStatistics<T, F>::RaftStatistics(F &max, F &min) : raft::kernel(), min(min), max(max)
 {
 
     input.addPort<T>("addvec");
@@ -10,7 +10,7 @@ AddVector<T, F>::AddVector(F &max, F &min) : raft::kernel(), min(min), max(max)
 }
 
 template <typename T, typename F>
-AddVector<T, F>::AddVector(const AddVector &other) : raft::kernel(), min(other.min), max(other.max)
+RaftStatistics<T, F>::RaftStatistics(const RaftStatistics &other) : raft::kernel(), min(other.min), max(other.max)
 {
 
     input.addPort<T>("addvec");
@@ -18,14 +18,14 @@ AddVector<T, F>::AddVector(const AddVector &other) : raft::kernel(), min(other.m
 }
 
 template <typename T, typename F>
-raft::kstatus AddVector<T, F>::run()
+raft::kstatus RaftStatistics<T, F>::run()
 {
     //T t;
 
     //input["addvec"].template pop(t);
     auto &t(input["addvec"].template peek<T>());
     F addVecTot = 0;
-    std::vector<F> totals={0,0};
+    std::vector<F> totals = {0, 0};
     for (int i = 0; i < t.size(); i++)
     {
         for (int j = 0; j < t[i].first.size(); j++)
@@ -41,7 +41,7 @@ raft::kstatus AddVector<T, F>::run()
                 max = t[i].first[j];
             }
             totals[0] += t[i].first[j];
-            totals[1]+= (t[i].first[j]*t[i].first[j]);
+            totals[1] += (t[i].first[j] * t[i].first[j]);
         }
     }
     input["addvec"].unpeek();

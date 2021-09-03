@@ -5,8 +5,8 @@
 #include <iostream>
 // #include "Raftlib.h"
 #include "SplitVector.h"
-#include "AddVector.h"
-#include "StdvVector.h"
+#include "RaftStatistics.h"
+#include "RaftHistogram.h"
 #include "Sum.h"
 #include "MergeBins.h"
 

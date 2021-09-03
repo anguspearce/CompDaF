@@ -1,5 +1,5 @@
-#ifndef STDVVECTOR_H
-#define STDVVECTOR_H
+#ifndef RAFTHISTOGRAM_H
+#define RAFTHISTOGRAM_H
 
 #include <iostream>
 #include <cstdint>
@@ -12,17 +12,17 @@
 #include "Raftlib.h"
 #include <map>
 template <typename T, typename F>
-class StdvVector : public raft::kernel
+class RaftHistogram : public raft::kernel
 {
 public:
     F mean, min;
     double binWidth;
     //std::vector<int> &bins;
 
-    StdvVector(F mean, F min, double binWidth);
-    StdvVector(const StdvVector &other);
+    RaftHistogram(F mean, F min, double binWidth);
+    RaftHistogram(const RaftHistogram &other);
     virtual raft::kstatus run();
     CLONE();
 };
-#include "StdvVector.tcc"
+#include "RaftHistogram.tcc"
 #endif

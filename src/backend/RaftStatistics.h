@@ -1,5 +1,5 @@
-#ifndef ADDVECTOR_H
-#define ADDVECTOR_H
+#ifndef RAFTSTATISTICS_H
+#define RAFTSTATISTICS_H
 #include <iostream>
 #include <cstdint>
 #include <cstdlib>
@@ -10,15 +10,15 @@
 #include "Raftlib.h"
 
 template <typename T, typename F>
-class AddVector : public raft::kernel
+class RaftStatistics : public raft::kernel
 {
 public:
     F &max;
     F &min;
-    AddVector(F &max, F &min);
-    AddVector(const AddVector &other);
+    RaftStatistics(F &max, F &min);
+    RaftStatistics(const RaftStatistics &other);
     virtual raft::kstatus run();
     CLONE();
 };
-#include "AddVector.tcc"
+#include "RaftStatistics.tcc"
 #endif

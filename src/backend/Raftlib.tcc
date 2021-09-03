@@ -1,12 +1,10 @@
 #ifndef RAFTLIB_TCC
 #define RAFTLIB_TCC
 
-
-
 using namespace std::chrono;
 
 template <typename T>
-Raftlib<T>::Raftlib(long *naxes,long totPixels)
+Raftlib<T>::Raftlib(long *naxes, long totPixels)
 {
     this->width = naxes[0];
     this->height = naxes[1];
@@ -21,13 +19,13 @@ void Raftlib<T>::statistics(std::vector<std::vector<T>> &vec)
     using type_v = std::vector<T>;
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
     using splitvec = SplitVector<type_v>;
-    using addvec = AddVector<type_a, T>;
+    using raftstats = RaftStatistics<type_a, T>;
     using sum = Sum<T>;
     this->max = -999999;
     this->min = 999999;
 
     splitvec sp(NUM_THREADS);
-    addvec av(max, min);
+    raftstats av(max, min);
     sum s(NUM_THREADS);
     raft::map m;
 
@@ -43,7 +41,7 @@ void Raftlib<T>::statistics(std::vector<std::vector<T>> &vec)
     auto duration = duration_cast<microseconds>(stop - start);
     std::cout << "Raft Statistics Time: " << duration.count() << std::endl;
     this->sumTotal = s.total;
-    this->sumsquares=s.sumSquaresTotal;
+    this->sumsquares = s.sumSquaresTotal;
 }
 template <typename T>
 void Raftlib<T>::mean()
@@ -53,7 +51,7 @@ void Raftlib<T>::mean()
 template <typename T>
 void Raftlib<T>::calcStdv()
 {
-    this->stdvDev=sqrt((this->sumsquares/this->noOfPixels)-(this->imgMean*this->imgMean));
+    this->stdvDev = sqrt((this->sumsquares / this->noOfPixels) - (this->imgMean * this->imgMean));
 }
 template <typename T>
 void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
@@ -61,14 +59,14 @@ void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
     using type_v = std::vector<T>;
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
     using splitvec = SplitVector<type_v>;
-    using stdvvec = StdvVector<type_a, T>;
+    using rafthisto = RaftHistogram<type_a, T>;
     using mergebins = MergeBins<T>;
     calculateBins();
     std::vector<int> lbins(this->noOfBins, 0);
     this->bins = lbins;
     splitvec sp(NUM_THREADS);
-    stdvvec sv(getMean(), this->min, this->binWidth);
-    mergebins mb(bins,NUM_THREADS);
+    rafthisto sv(getMean(), this->min, this->binWidth);
+    mergebins mb(bins, NUM_THREADS);
     raft::map m;
 
     auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));

@@ -27,7 +27,7 @@ raft::kstatus MergeBins<T>::run()
             for (auto itr = a.begin(); itr != a.end(); ++itr)
             {
                 //std::cout<<itr->first<<" "<<itr->second<<std::endl;
-                bins[itr->first]+=itr->second;
+                bins[itr->first] += itr->second;
             }
             port.unpeek();
 

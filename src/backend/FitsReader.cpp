@@ -100,8 +100,7 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             }
         }
     }
-        fits_close_file(fptr, &status);
-
+    fits_close_file(fptr, &status);
 }
 void FitsReader::readImagePixels()
 {
@@ -121,7 +120,7 @@ void FitsReader::readImagePixels()
     {
         printf("Memory allocation error\n");
     }
-    long totPixels=0;
+    long totPixels = 0;
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
     {
         //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
@@ -142,7 +141,7 @@ void FitsReader::readImagePixels()
             {
                 if (std::isfinite(pixels[ii]))
                 {
-                    totPixels+=1;
+                    totPixels += 1;
                     v.push_back(pixels[ii]);
                 }
             }
@@ -151,15 +150,15 @@ void FitsReader::readImagePixels()
             imageData.push_back(v);
         }
     }
-            //std::cout<<totPixels<<std::endl;
+    //std::cout<<totPixels<<std::endl;
 
     std::cout << "\nCopied image data to array" << std::endl;
 
-    Raftlib<float> raft(naxes,totPixels);
+    Raftlib<float> raft(naxes, totPixels);
     raft.statistics(imageData);
     raft.mean();
     raft.calcStdv();
-    raft.calculateBins();
+    //raft.calculateBins();
     raft.histogram(imageData);
     //raft.stdDev(imageData);
     int noOfBins;
@@ -169,7 +168,9 @@ void FitsReader::readImagePixels()
     float min, max;
     raft.getMinAndMax(min, max);
     //std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " << min << " Max: " << max << " FirstBinCenter: " << raft.getBinCenter() << std::endl;
-
+    // for(int i=0;i<bins.size();i++){
+    //     std::cout<<bins[i]<<std::endl;
+    // }
 
     //setting histogram data
     auto message_histogram = regionHistoData.add_histograms();
@@ -182,33 +183,35 @@ void FitsReader::readImagePixels()
     *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
 
     //setting statistics data
-    auto numPixelsValue=regionStatsData.add_statistics();
+    auto numPixelsValue = regionStatsData.add_statistics();
     numPixelsValue->set_value(totPixels);
     numPixelsValue->set_stats_type(CARTA::StatsType::NumPixels);
-    auto sumValue=regionStatsData.add_statistics();
+    auto sumValue = regionStatsData.add_statistics();
     sumValue->set_value(raft.getSum());
     sumValue->set_stats_type(CARTA::StatsType::Sum);
-    auto meanValue=regionStatsData.add_statistics();
+    auto meanValue = regionStatsData.add_statistics();
     meanValue->set_value(raft.getMean());
     meanValue->set_stats_type(CARTA::StatsType::Mean);
-    auto stdvValue=regionStatsData.add_statistics();
+    auto stdvValue = regionStatsData.add_statistics();
     stdvValue->set_value(raft.getStdv());
     stdvValue->set_stats_type(CARTA::StatsType::Sigma);
-    auto minValue=regionStatsData.add_statistics();
+    auto minValue = regionStatsData.add_statistics();
     minValue->set_value(min);
     minValue->set_stats_type(CARTA::StatsType::Min);
-    auto maxValue=regionStatsData.add_statistics();
+    auto maxValue = regionStatsData.add_statistics();
     maxValue->set_value(max);
     maxValue->set_stats_type(CARTA::StatsType::Max);
 
     fits_close_file(fptr, &status);
 }
-CARTA::RegionHistogramData& FitsReader::getRegionHistoData(){
+CARTA::RegionHistogramData &FitsReader::getRegionHistoData()
+{
     return regionHistoData;
 }
-    CARTA::RegionStatsData& FitsReader::getRegionStatsData(){
-        return regionStatsData;
-    }
+CARTA::RegionStatsData &FitsReader::getRegionStatsData()
+{
+    return regionStatsData;
+}
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
