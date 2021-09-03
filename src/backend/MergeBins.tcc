@@ -8,7 +8,7 @@ MergeBins<T>::MergeBins(std::vector<int> &bins, const std::size_t n_input_ports)
 
     for (auto i(0); i < n_input_ports; i++)
     {
-        addPortTo<std::map<int, int>>(input);
+        addPortTo<std::vector<int>>(input);
     }
     //input.template addPort<T>("a");
 };
@@ -23,11 +23,15 @@ raft::kstatus MergeBins<T>::run()
         {
             //T a;
             //port.pop(a);
-            auto &a(port.template peek<std::map<int, int>>());
-            for (auto itr = a.begin(); itr != a.end(); ++itr)
-            {
-                //std::cout<<itr->first<<" "<<itr->second<<std::endl;
-                bins[itr->first] += itr->second;
+            auto &a(port.template peek<std::vector<int>>());
+            // for (auto itr = a.begin(); itr != a.end(); ++itr)
+            // {
+            //     //std::cout<<itr->first<<" "<<itr->second<<std::endl;
+            //     bins[itr->first] += itr->second;
+            // }
+            //std::cout<<a.size()<<std::endl;
+            for(int i=0;i<a.size();i++){
+                bins[i]+=a[i];
             }
             port.unpeek();
 

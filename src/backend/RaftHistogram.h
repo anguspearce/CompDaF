@@ -17,9 +17,10 @@ class RaftHistogram : public raft::kernel
 public:
     F mean, min;
     double binWidth;
-    //std::vector<int> &bins;
+    int noOfBins;
+    std::vector<int> bins;
 
-    RaftHistogram(F mean, F min, double binWidth);
+    RaftHistogram(F mean, F min, double binWidth, int noOfBins);
     RaftHistogram(const RaftHistogram &other);
     virtual raft::kstatus run();
     CLONE();
