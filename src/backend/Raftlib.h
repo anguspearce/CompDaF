@@ -22,10 +22,10 @@ template <typename T>
 class Raftlib
 {
 public:
-    Raftlib(long *naxes,long totPixels);
+    Raftlib(long *naxes);
     void statistics(std::vector<std::vector<T>> &vec);
-    void mean();
-    void calcStdv();
+    void mean(long totPixels);
+    void calcStdv(long totPixels);
     void histogram(std::vector<std::vector<T>> &vec);
     void calculateBins();
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins);
