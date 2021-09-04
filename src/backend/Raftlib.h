@@ -9,6 +9,7 @@
 #include "RaftHistogram.h"
 #include "Sum.h"
 #include "MergeBins.h"
+#include "RaftReadImage.h"
 
 #include <raft>
 #include <chrono>
@@ -27,6 +28,8 @@ public:
     void mean(long totPixels);
     void calcStdv(long totPixels);
     void histogram(std::vector<std::vector<T>> &vec);
+    void TestStatsReadImage(fitsfile *fptr);
+    void TestHistoReadImage(fitsfile *fptr);
     void calculateBins();
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins);
     T getSum();
@@ -34,6 +37,7 @@ public:
     T getStdv();
     void getMinAndMax(T &imgMin, T &imgMax);
     T getBinCenter();
+    long getNoOfPixels();
 
 private:
     const int NUM_THREADS = 5;

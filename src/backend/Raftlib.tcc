@@ -48,12 +48,12 @@ void Raftlib<T>::statistics(std::vector<std::vector<T>> &vec)
 template <typename T>
 void Raftlib<T>::mean(long totPixels)
 {
-    this->imgMean = this->sumTotal / totPixels;
+    this->imgMean = this->sumTotal / this->noOfPixels;
 }
 template <typename T>
 void Raftlib<T>::calcStdv(long totPixels)
 {
-    this->stdvDev = sqrt((this->sumsquares / totPixels) - (this->imgMean * this->imgMean));
+    this->stdvDev = sqrt((this->sumsquares / this->noOfPixels) - (this->imgMean * this->imgMean));
 }
 template <typename T>
 void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
@@ -67,7 +67,7 @@ void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
     // std::vector<int> lbins(this->noOfBins, 0);
     // this->bins = lbins;
     splitvec sp(NUM_THREADS);
-    rafthisto sv(getMean(), this->min, this->binWidth,this->noOfBins);
+    rafthisto sv(getMean(), this->min, this->binWidth, this->noOfBins);
     mergebins mb(bins, NUM_THREADS);
     raft::map m;
 
@@ -82,6 +82,66 @@ void Raftlib<T>::histogram(std::vector<std::vector<T>> &vec)
     //std::cout << "Raft Histogram Time: " << duration.count() << std::endl;
     //this->stdvDev = sqrt(s.total / (this->noOfPixels-1));
 }
+
+template <typename T>
+void Raftlib<T>::TestStatsReadImage(fitsfile *fptr)
+{
+    using type_v = std::vector<T>;
+    using type_a = std::vector<std::pair<type_v, raft::signal>>;
+
+    using readimage = RaftReadImage<type_v>;
+    using splitvec = SplitVector<type_v>;
+    using raftstats = RaftStatistics<type_a, T>;
+    using sum = Sum<T>;
+    readimage ri(fptr);
+    splitvec sp(NUM_THREADS);
+    raftstats av(max, min);
+    sum s(NUM_THREADS);
+    raft::map m;
+    m += ri >> sp;
+    m += sp <= av >= s;
+
+    auto start = high_resolution_clock::now();
+
+    m.exe();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << "Raft Statistics Time: " << duration.count()*1e-6<<"s" << std::endl;
+    this->sumTotal += s.total;
+    this->sumsquares += s.sumSquaresTotal;
+    this->noOfPixels=ri.totPixels;
+}
+template <typename T>
+void Raftlib<T>::TestHistoReadImage(fitsfile *fptr)
+{
+    using type_v = std::vector<T>;
+    using type_a = std::vector<std::pair<type_v, raft::signal>>;
+    using readimage = RaftReadImage<type_v>;
+    using splitvec = SplitVector<type_v>;
+    using rafthisto = RaftHistogram<type_a, T>;
+    using mergebins = MergeBins<T>;
+    //calculateBins();
+    // std::vector<int> lbins(this->noOfBins, 0);
+    // this->bins = lbins;
+    readimage ri(fptr);
+    splitvec sp(NUM_THREADS);
+    rafthisto sv(getMean(), this->min, this->binWidth, this->noOfBins);
+    mergebins mb(bins, NUM_THREADS);
+    raft::map m;
+
+    //auto readeachone(raft::read_each<type_v>(vec.begin(), vec.end()));
+    //m += readeachone >> sp;
+    m += ri >> sp;
+    m += sp <= sv >= mb;
+    auto start = high_resolution_clock::now();
+
+    m.exe();
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+    std::cout << "Raft Histogram Time: " << duration.count()*1e-6<<"s" << std::endl;
+
+}
+
 template <typename T>
 void Raftlib<T>::calculateBins()
 {
@@ -123,6 +183,11 @@ template <typename T>
 T Raftlib<T>::getBinCenter()
 {
     return this->firstBinCenter;
+}
+template <typename T>
+long Raftlib<T>::getNoOfPixels()
+{
+    return this->noOfPixels;
 }
 
 #endif

@@ -123,38 +123,44 @@ void FitsReader::readImagePixels()
     long totPixels = 0;
 
     Raftlib<float> raft(naxes);
-    for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
-    {
-        std::vector<std::vector<float>> channelData;
-        //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
-        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
-        {
-            status = 0;
-            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
-            {
-                std::cout << "error" << std::endl;
-                break; /* jump out of loop on error */
-            }
-            std::vector<float> v;
-            //This below code prints out each pixel with the row number
-            //Is one way of accessing each pixel/row at a time
+    
+    raft.TestStatsReadImage(fptr);
+    std::cout<<"Finsihed Raft stats through reading in raft"<<std::endl;
+    totPixels=raft.getNoOfPixels();
+    // for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
+    // {
+    //     std::vector<std::vector<float>> channelData;
+    //     //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
+    //     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
+    //     {
+    //         status = 0;
+    //         if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
+    //         {
+    //             std::cout << "error" << std::endl;
+    //             break; /* jump out of loop on error */
+    //         }
+    //         std::vector<float> v;
+    //         //This below code prints out each pixel with the row number
+    //         //Is one way of accessing each pixel/row at a time
 
-            // printf(" %4d ", fpixel[1]); /* print row number */
-            for (int ii = 0; ii < naxes[0]; ii++)
-            {
-                if (std::isfinite(pixels[ii]))
-                {
-                    totPixels += 1;
-                    v.push_back(pixels[ii]);
-                }
-            }
-            // std::cout << pixels[ii] << " "; /* print each value  */
-            //printf("\n");                       /* terminate line */
-            //imageData.push_back(v);
-            channelData.push_back(v);
-        }
-        raft.statistics(channelData);
-    }
+    //         // printf(" %4d ", fpixel[1]); /* print row number */
+    //         for (int ii = 0; ii < naxes[0]; ii++)
+    //         {
+    //             if (std::isfinite(pixels[ii]))
+    //             {
+    //                 totPixels += 1;
+    //                 v.push_back(pixels[ii]);
+    //             }
+    //         }
+    //         // std::cout << pixels[ii] << " "; /* print each value  */
+    //         //printf("\n");                       /* terminate line */
+    //         //imageData.push_back(v);
+    //         channelData.push_back(v);
+    //     }
+    //     raft.statistics(channelData);
+    // }
+
+
     //std::cout<<totPixels<<std::endl;
 
     //std::cout << "\nCopied image data to array" << std::endl;
@@ -165,38 +171,40 @@ void FitsReader::readImagePixels()
     raft.calcStdv(totPixels);
     raft.calculateBins();
 
-    for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
-    {
-        std::vector<std::vector<float>> channelData;
-        //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
-        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
-        {
-            status = 0;
-            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
-            {
-                std::cout << "error" << std::endl;
-                break; /* jump out of loop on error */
-            }
-            std::vector<float> v;
-            //This below code prints out each pixel with the row number
-            //Is one way of accessing each pixel/row at a time
+    raft.TestHistoReadImage(fptr);
+    std::cout<<"Finsihed Raft Histo through reading in raft"<<std::endl;
+    // for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
+    // {
+    //     std::vector<std::vector<float>> channelData;
+    //     //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
+    //     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
+    //     {
+    //         status = 0;
+    //         if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
+    //         {
+    //             std::cout << "error" << std::endl;
+    //             break; /* jump out of loop on error */
+    //         }
+    //         std::vector<float> v;
+    //         //This below code prints out each pixel with the row number
+    //         //Is one way of accessing each pixel/row at a time
 
-            // printf(" %4d ", fpixel[1]); /* print row number */
-            for (int ii = 0; ii < naxes[0]; ii++)
-            {
-                if (std::isfinite(pixels[ii]))
-                {
-                    //totPixels += 1;
-                    v.push_back(pixels[ii]);
-                }
-            }
-            // std::cout << pixels[ii] << " "; /* print each value  */
-            //printf("\n");                       /* terminate line */
-            //imageData.push_back(v);
-            channelData.push_back(v);
-        }
-        raft.histogram(channelData);
-    }
+    //         // printf(" %4d ", fpixel[1]); /* print row number */
+    //         for (int ii = 0; ii < naxes[0]; ii++)
+    //         {
+    //             if (std::isfinite(pixels[ii]))
+    //             {
+    //                 //totPixels += 1;
+    //                 v.push_back(pixels[ii]);
+    //             }
+    //         }
+    //         // std::cout << pixels[ii] << " "; /* print each value  */
+    //         //printf("\n");                       /* terminate line */
+    //         //imageData.push_back(v);
+    //         channelData.push_back(v);
+    //     }
+    //     raft.histogram(channelData);
+    // }
 
     //raft.histogram(imageData);
     //raft.stdDev(imageData);
