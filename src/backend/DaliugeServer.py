@@ -96,9 +96,13 @@ class DaliugeServer:
                 if "data" not in dir(hdu[0]):
                     raise Exception("Unexpected format in fits file.")
                 # Seems to be an embedded list (12200 length, assume 8600 in each)
+                
                 d = hdu[0].data
+                print(type(d))
                 self.shape = d.shape
                 self.dimensions = len(self.shape)
+                print(self.shape)
+                print(self.dimensions)
                 chunk_size = 'auto' if self.shape[0] * self.shape[1] > 25000000 else (1000, 1000)
                 ack.success = True
         except:
