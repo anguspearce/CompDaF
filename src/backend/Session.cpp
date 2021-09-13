@@ -1,13 +1,16 @@
 #include "Session.h"
-
-#include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
 
+// Constructor for session class
 Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws) : _socket(ws)
 {
     _connected = true;
 }
 
+/* 
+    RegisterViewer ICD
+    Respondes with a register viewer acknowledgement
+*/
 void Session::OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t icd_version, uint32_t request_id)
 {
     auto session_id = message.session_id();
@@ -24,6 +27,11 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t ic
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
 
+/*
+    Open file ICD
+    This method gets the fields required in the open file acknowledge.
+    It will create an instance of FitsReader if the requested file is found the search directory.    
+*/
 void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
 {
     const auto &directory = message.directory();
@@ -85,8 +93,10 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
-    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
 }
+/*
+    CARTA ICD that will return region histogram data 
+*/
 void Session::OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirements &message, uint32_t request_id)
 {
 
@@ -98,6 +108,9 @@ void Session::OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirem
 
     SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
 }
+/*
+    CARTA ICD that will return region statistics data 
+*/
 void Session::OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &message, uint32_t request_id)
 {
     auto file_id(message.file_id());
@@ -108,6 +121,9 @@ void Session::OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &me
 
     SendEvent(CARTA::EventType::REGION_STATS_DATA, request_id, regionStatsData);
 }
+/*
+    Sending an event through a socket
+*/
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite &message, bool compress)
 {
     size_t message_length = message.ByteSizeLong();

@@ -11,6 +11,7 @@
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
 #include <uWebSockets/App.h>
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/tiles.pb.h>

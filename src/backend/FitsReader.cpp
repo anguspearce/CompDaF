@@ -1,18 +1,25 @@
 #include "FitsReader.h"
 
+/*
+    Constructor of FitsReader that will store the file name. 
+*/
 FitsReader::FitsReader(const std::string &filename)
 {
     _filename = filename;
 }
-
+/*
+    FillFileInfo is called when a user selects to open a file
+    This method will open a fits file and will only take information from
+    the primary HDU of a fits file
+*/
 void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &fName, int64_t &fSize, int &naxis, long *naxes, std::vector<CARTA::HeaderEntry> &headerEntries, std::string &error)
 {
     //Opening fits file
-    //fitsfile *fptr;
     int status = 0, nkeys, hdunum;
 
     //Open fits file
     fits_open_file(&fptr, _filename.c_str(), READONLY, &status);
+
     //Get number of headers
     fits_get_num_hdus(fptr, &hdunum, &status);
 
@@ -44,6 +51,7 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             key = "FILENAME";
             char name[70];
             fits_read_key(fptr, TSTRING, key.c_str(), name, comment, &status);
+            //If no filename key then set filename to user input
             if (status)
             {
 
@@ -60,35 +68,32 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             //Get Image dimensions
             status = 0;
             int bitpix;
-            //long naxes[3] = {1, 1, 1};
+
+            //Get image Dimensions
             fits_get_img_dim(fptr, &naxis, &status);
 
+            //If 2D image
             if (naxis == 2)
             {
                 fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status);
             }
+            //else 3d image
             else if (naxis == 3)
             {
 
                 fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status);
             }
-            //std::cout<<naxes[0]<<" "<<naxes[1]<<" "<< naxes[2]<<" "<<sizeof(naxes)/sizeof(naxes[0])<<std::endl;
-            // //Get image Width and Height
-            // key = "NAXIS1";
-            // fits_read_key(fptr, TINT, key.c_str(), &width, comment, &status);
 
-            // key = "NAXIS2";
-            // fits_read_key(fptr, TINT, key.c_str(), &height, comment, &status);]
-
-            //getting no of axes and dimensions and data type
-
-            //Get header entries
             int nKeys;
             char kComment[FLEN_CARD];
             char kValue[FLEN_CARD];
             char kName[FLEN_CARD];
             status = 0;
+
+            //Getting the number of header entires
             fits_get_hdrspace(fptr, &nkeys, NULL, &status);
+
+            //Looping through each entry and adding it to the protocol message
             for (int i = 1; i <= nkeys; i++)
             {
                 CARTA::HeaderEntry hEntry;
@@ -100,13 +105,21 @@ void FitsReader::FillFileInfo(std::vector<std::string> &hdu_list, std::string &f
             }
         }
     }
+    //Close file after use
     fits_close_file(fptr, &status);
 }
+/*
+    readImagePixels is called after fillFileInfo
+    This method will make calls to the Raftlib class
+    to calculate the respective statistics and histogram
+    data.
+*/
 void FitsReader::readImagePixels()
 {
     int status = 0;
+
+    //Open fits file
     fits_open_file(&fptr, _filename.c_str(), READONLY, &status);
-    //Reading image pixels into array
     long naxes[3] = {1, 1, 1}, fpixel[3] = {1, 1, 1};
     int bitpix, naxis;
     status = 0;
@@ -127,97 +140,20 @@ void FitsReader::readImagePixels()
     raft.TestStatsReadImage(fptr);
     std::cout<<"Finsihed Raft stats through reading in raft"<<std::endl;
     totPixels=raft.getNoOfPixels();
-    // for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
-    // {
-    //     std::vector<std::vector<float>> channelData;
-    //     //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
-    //     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
-    //     {
-    //         status = 0;
-    //         if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
-    //         {
-    //             std::cout << "error" << std::endl;
-    //             break; /* jump out of loop on error */
-    //         }
-    //         std::vector<float> v;
-    //         //This below code prints out each pixel with the row number
-    //         //Is one way of accessing each pixel/row at a time
 
-    //         // printf(" %4d ", fpixel[1]); /* print row number */
-    //         for (int ii = 0; ii < naxes[0]; ii++)
-    //         {
-    //             if (std::isfinite(pixels[ii]))
-    //             {
-    //                 totPixels += 1;
-    //                 v.push_back(pixels[ii]);
-    //             }
-    //         }
-    //         // std::cout << pixels[ii] << " "; /* print each value  */
-    //         //printf("\n");                       /* terminate line */
-    //         //imageData.push_back(v);
-    //         channelData.push_back(v);
-    //     }
-    //     raft.statistics(channelData);
-    // }
-
-
-    //std::cout<<totPixels<<std::endl;
-
-    //std::cout << "\nCopied image data to array" << std::endl;
-
-    //Raftlib<float> raft(naxes);
-    //raft.statistics(imageData);
     raft.mean(totPixels);
     raft.calcStdv(totPixels);
     raft.calculateBins();
 
     raft.TestHistoReadImage(fptr);
     std::cout<<"Finsihed Raft Histo through reading in raft"<<std::endl;
-    // for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
-    // {
-    //     std::vector<std::vector<float>> channelData;
-    //     //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
-    //     for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
-    //     {
-    //         status = 0;
-    //         if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
-    //         {
-    //             std::cout << "error" << std::endl;
-    //             break; /* jump out of loop on error */
-    //         }
-    //         std::vector<float> v;
-    //         //This below code prints out each pixel with the row number
-    //         //Is one way of accessing each pixel/row at a time
 
-    //         // printf(" %4d ", fpixel[1]); /* print row number */
-    //         for (int ii = 0; ii < naxes[0]; ii++)
-    //         {
-    //             if (std::isfinite(pixels[ii]))
-    //             {
-    //                 //totPixels += 1;
-    //                 v.push_back(pixels[ii]);
-    //             }
-    //         }
-    //         // std::cout << pixels[ii] << " "; /* print each value  */
-    //         //printf("\n");                       /* terminate line */
-    //         //imageData.push_back(v);
-    //         channelData.push_back(v);
-    //     }
-    //     raft.histogram(channelData);
-    // }
-
-    //raft.histogram(imageData);
-    //raft.stdDev(imageData);
     int noOfBins;
     double binWidth;
     std::vector<int> bins;
     raft.getBins(noOfBins, binWidth, bins);
     float min, max;
     raft.getMinAndMax(min, max);
-    //std::cout << " " << naxes[0] << " " << naxes[1] << " Total: " << raft.getSum() << " Mean: " << raft.getMean() << " Stdv: " << raft.getStdv() << " No of Bins: " << noOfBins << " BinWidth: " << binWidth << " Min: " << min << " Max: " << max << " FirstBinCenter: " << raft.getBinCenter() << std::endl;
-    // for(int i=0;i<bins.size();i++){
-    //     std::cout<<bins[i]<<std::endl;
-    // }
 
     //setting histogram data
     auto message_histogram = regionHistoData.add_histograms();
