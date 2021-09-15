@@ -106,7 +106,9 @@ void Raftlib<T>::TestStatsReadImage(fitsfile *fptr)
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << "Raft Statistics Time: " << duration.count()*1e-6<<"s" << std::endl;
+    std::cout << "Raft Read Image Time: " << ri.readTime*1e-6<<"s" << std::endl;
+
+    std::cout << "Raft Statistics Time: " << (duration.count()*1e-6)-(ri.readTime*1e-6)<<"s" << std::endl;
     this->sumTotal += s.total;
     this->sumsquares += s.sumSquaresTotal;
     this->noOfPixels=ri.totPixels;
@@ -138,7 +140,8 @@ void Raftlib<T>::TestHistoReadImage(fitsfile *fptr)
     m.exe();
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(stop - start);
-    std::cout << "Raft Histogram Time: " << duration.count()*1e-6<<"s" << std::endl;
+    std::cout << "Raft Read Image Time: " << ri.readTime*1e-6<<"s" << std::endl;
+    std::cout << "Raft Histogram Time: " << (duration.count()*1e-6)-(ri.readTime*1e-6)<<"s" << std::endl;
 
 }
 
