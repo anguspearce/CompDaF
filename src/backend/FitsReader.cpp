@@ -120,34 +120,38 @@ void FitsReader::readImagePixels()
 
     //Open fits file
     fits_open_file(&fptr, _filename.c_str(), READONLY, &status);
-    long naxes[3] = {1, 1, 1}, fpixel[3] = {1, 1, 1};
+
+    //initialising the number of axis and axes values
+    long naxes[3] = {1, 1, 1};
     int bitpix, naxis;
     status = 0;
-    float *pixels;
+
+    //Getting the parameters
     fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status);
 
-    //allocating memory for one row
-    pixels = (float *)malloc(naxes[0] * sizeof(float));
-
-    if (pixels == NULL)
-    {
-        printf("Memory allocation error\n");
-    }
+    //Variable to hold total number of non nan pixels
     long totPixels = 0;
 
+    //Initialising a Raftlib class - constructing with image dimensions
     Raftlib<float> raft(naxes);
-    
-    raft.TestStatsReadImage(fptr);
-    std::cout<<"Finsihed Raft stats through reading in raft"<<std::endl;
-    totPixels=raft.getNoOfPixels();
 
+    //Calling region statistics implementation using raftlib
+    raft.CalculateStatistics(fptr);
+    std::cout << "Finsihed Raft stats through reading in raft" << std::endl;
+
+    //Getting the number of non nan pixels
+    totPixels = raft.getNoOfPixels();
+
+    //Calculating mean, standard deviation and no of bins once region statistics is completed
     raft.mean(totPixels);
     raft.calcStdv(totPixels);
     raft.calculateBins();
 
-    raft.TestHistoReadImage(fptr);
-    std::cout<<"Finsihed Raft Histo through reading in raft"<<std::endl;
+    //Calling region histogram implementation using raftlib
+    raft.CalculateHistogram(fptr);
+    std::cout << "Finsihed Raft Histo through reading in raft" << std::endl;
 
+    //Initialising and retireve data that goes in the protocol buffers once histogram is completed
     int noOfBins;
     double binWidth;
     std::vector<int> bins;
@@ -155,7 +159,7 @@ void FitsReader::readImagePixels()
     float min, max;
     raft.getMinAndMax(min, max);
 
-    //setting histogram data
+    //setting histogram data into protocol buffers
     auto message_histogram = regionHistoData.add_histograms();
     message_histogram->set_channel(-1);
     message_histogram->set_num_bins(noOfBins);
@@ -165,7 +169,7 @@ void FitsReader::readImagePixels()
     message_histogram->set_std_dev(raft.getStdv());
     *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
 
-    //setting statistics data
+    //setting statistics data into protocol buffers
     auto numPixelsValue = regionStatsData.add_statistics();
     numPixelsValue->set_value(totPixels);
     numPixelsValue->set_stats_type(CARTA::StatsType::NumPixels);
@@ -187,14 +191,29 @@ void FitsReader::readImagePixels()
 
     fits_close_file(fptr, &status);
 }
+
+/*
+    This method is used to return the protocol buffer
+    for region histogram data
+*/
 CARTA::RegionHistogramData &FitsReader::getRegionHistoData()
 {
     return regionHistoData;
 }
+
+/*
+    This method is used to return the protocol buffer
+    for region Statistics data
+*/
 CARTA::RegionStatsData &FitsReader::getRegionStatsData()
 {
     return regionStatsData;
 }
+
+/*
+    This method is used to calculate the filesize which
+    which is used in the open file ack protobuf
+*/
 std::ifstream::pos_type FitsReader::filesize(const char *filename)
 {
     std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);

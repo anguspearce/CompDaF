@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <iostream>
-// #include "Raftlib.h"
 #include "SplitVector.h"
 #include "RaftStatistics.h"
 #include "RaftHistogram.h"
@@ -24,12 +23,10 @@ class Raftlib
 {
 public:
     Raftlib(long *naxes);
-    void statistics(std::vector<std::vector<T>> &vec);
+    void CalculateStatistics(fitsfile *fptr);
+    void CalculateHistogram(fitsfile *fptr);
     void mean(long totPixels);
     void calcStdv(long totPixels);
-    void histogram(std::vector<std::vector<T>> &vec);
-    void TestStatsReadImage(fitsfile *fptr);
-    void TestHistoReadImage(fitsfile *fptr);
     void calculateBins();
     void getBins(int &nBins, double &bWidth, std::vector<int> &bins);
     T getSum();
