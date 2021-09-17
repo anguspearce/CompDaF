@@ -80,8 +80,6 @@ class FITSread(BarrierAppDROP):
 #     \~English Port receiving entire ndarray
 # \param[out] port/ndarray
 #     \~English Port outputting the ndarray view
-# \param[out] port/values
-#     \~English Port outputting the min, max, number of bins
 # \par EAGLE_END
 class SplitApp(BarrierAppDROP):
     
@@ -96,10 +94,10 @@ class SplitApp(BarrierAppDROP):
         # self.outputs is a list of output ports
         outs = self.outputs
         # Split the array into the number of output ports 
-        arrs = np.array_split(self.data, len(outs) - 1)
-
+        arrs = np.array_split(self.data, len(outs))
         
-        t0 = time.perf_counter() # Timer 1
+        
+        t = time.perf_counter() # Timer 1
 
         # Max of entire data set (ignoring NaN)
         max = np.nanmax(self.data) 
@@ -108,27 +106,19 @@ class SplitApp(BarrierAppDROP):
         # Get number of bins 
         bins = self.getNumBins()
 
-        t1 = time.perf_counter() # Timer 2 
-
-        # Save the calculated min, max and bins as a pickled file for the next Drop to use (could also pass the data directly)
-        # Set pickled file location and name
-        #pkl_file = open("values.pkl", 'wb')
-        # Create pickled file containing min, max, number of bins
-        #pickle.dump([min, max , bins], pkl_file)
+        #t1 = time.perf_counter() # Timer 2 
+        
+        #t = t1-t
+        
         
 
         # Zip each array view to a corresponding output (parallel iteration)
         z = zip(outs, arrs)
         # Pass pickled data to each respective output
-        for i in range(int(len(outs)/2)):
-            d = pickle.dumps(arrs[i])
-            outs[i].len = len(d)
-            outs[i].write(d)
-
-        for i in range(int(len(outs)/2), len(outs)):
-            d = pickle.dumps([min, max , bins])
-            outs[i].len = len(d)
-            outs[i].write(d)
+        for [out, arr] in z:
+            d = pickle.dumps([arr, min, max, bins, t])
+            out.len = len(d)
+            out.write(d)
             
     
     def getNumBins(self):
@@ -146,7 +136,7 @@ class SplitApp(BarrierAppDROP):
             raise Exception(
                 'Only one input should have been added to %r' % self)
         
-        self.data = np.array(pickle.loads(droputils.allDropContents(ins[0], bufsize=8192)) , dtype=np.float64)
+        self.data = np.array(pickle.loads(droputils.allDropContents(ins[0], bufsize=8192)) , dtype= np.float64)
 
 
 
@@ -161,8 +151,6 @@ class SplitApp(BarrierAppDROP):
 #             \~English Application class\n
 # \param[in] port/ndarray
 #             \~English Port receiving ndarray view
-# \param[in] port/values
-#             \~English Port receiving the min, max, number of bins
 # \param[out] port/list
 #             \~English Port outputs list of calculated statistics
 # \par EAGLE_END
@@ -177,28 +165,27 @@ class ComputeStatsApp(BarrierAppDROP):
         super(ComputeStatsApp, self).initialize(**kwargs)
 
     def run(self):
-        # Fetch data from input port
+        # Fetch data from input port in form [arr, min, max, bins, t] (t is the time taken to calculate min, max, number of bins over entire data set)
         self.getInputArrays()
-        # Load min, max, number of bins from pickled file
-        # with open("values.pkl", 'rb') as pickle_file:
-        #     self.values = pickle.load(pickle_file)
-        
+        # data is the numpy array view 
+        data = np.array(self.d[0], dtype= np.float64)
 
         t0 = time.perf_counter() # Timer 1
 
         # Sum of data
-        sum = np.nansum(self.data, dtype=np.float64)
+        sum = np.nansum(data, dtype=np.float64)
         # Sum of the squared data
-        sumSq = np.nansum(np.multiply(self.data, self.data, dtype=np.float64), dtype=np.float64)
+        sumSq = np.nansum(np.multiply(data, data, dtype= np.float64), dtype= np.float64)
         # Number of pixels
-        pixels = self.data.size - np.count_nonzero(np.isnan(self.data))
+        pixels = data.size - np.count_nonzero(np.isnan(data))
         # Histogram that uses the received number of bins, min, and max, calculated in the previous Drop
-        hist = np.histogram(self.data, self.values[2], (self.values[0], self.values[1]))
+        hist, bins = np.histogram(data, self.d[3], (self.d[1], self.d[2]))
 
         t1 = time.perf_counter() # Timer 2
-        
-        # Combining calcalation results to send to output Drop
-        stats = [sum, sumSq, pixels, hist, t1-t0]
+        t1 = t1-t0
+
+        # Combining calcalation results to send to output Drop, as well as min, max, bins, t from prev Drop
+        stats = [sum, sumSq, pixels, hist, t1, self.d[1], self.d[2], self.d[3], self.d[4]]
         stats = pickle.dumps(stats)
         
         # Only one output should have been added
@@ -218,12 +205,11 @@ class ComputeStatsApp(BarrierAppDROP):
         vector received from one input.
         """
         ins = self.inputs
-        if len(ins) != 2:
+        if len(ins) != 1:
             raise Exception(
-                'Only two inputs should have been added to %r' % self)
+                'Only one input should have been added to %r' % self)
         
-        self.data = np.array(pickle.loads(droputils.allDropContents(ins[0], bufsize=8192)) , dtype=np.float64)
-        self.values = pickle.loads(droputils.allDropContents(ins[1]))
+        self.d =  pickle.loads(droputils.allDropContents(ins[0], bufsize=8192))
 
 
 ##
@@ -235,8 +221,6 @@ class ComputeStatsApp(BarrierAppDROP):
 # \param category PythonApp
 # \param[in] param/appclass/Daliuge.GatherApp/String
 #     \~English Application class\n
-# \param[in] port/values
-#             \~English Port receiving the min, max, number of bins
 # \param[in] port/list
 #     \~English Port receiving list of statistics to combine
 # \param[out] port/string
@@ -249,12 +233,11 @@ class GatherApp(BarrierAppDROP):
                                     [dlg_batch_output('binary/*', [])],
                                     [dlg_streaming_input('binary/*')])
     def run(self):
+        # Set self.data to list of data from inputs
         self.getInputArrays()
-        # Load min, max, number of bins from pickled file
-        with open("values.pkl", 'rb') as pickle_file:
-            self.values = pickle.load(pickle_file)
         
-        # Default values for time, total
+        
+        # Default values for time, sum, sum squared, pixels, histogram
         t = 0
         sum = 0
         sumSq = 0
@@ -262,13 +245,13 @@ class GatherApp(BarrierAppDROP):
         hist = None
         
 
-        t0 = time.perf_counter() # Timer 1
+        #t0 = time.perf_counter() # Timer 1
 
         for i in self.data:
             sum += i[0]
             sumSq += i[1]
             pixels += i[2]
-            if hist == None:
+            if hist is None:
                 hist = i[3]
             else:
                 hist += i[3]
@@ -278,11 +261,12 @@ class GatherApp(BarrierAppDROP):
         
         t1 = time.perf_counter() # Timer 2
         
-        t += (t1-t0) # Add time taken to compare results of each Drop
+        t = t1 - self.data[0][8]
+        #t += (t1-t0) # Add time taken to compare results of each Drop
 
         # Combining calculation results to send to output Drop
-        stats = "Sum: {sum} \nMean: {mean} \nMax: {max} \nMin: {min} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t} \nHistogram and bins: {hist}"
-        stats = stats.format(sum=sum, mean=mean, max=self.values[1], min=self.values[0], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t, hist=hist)
+        stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
+        stats = stats.format(sum=sum, mean=mean, min=self.data[0][5], max=self.data[0][6], bins=self.data[0][7], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
         # At least one output should have been added
         outs = self.outputs
         if len(outs) < 1:
@@ -304,5 +288,5 @@ class GatherApp(BarrierAppDROP):
             raise Exception(
                 'At least one input should have been added to %r' % self) 
         
-        self.data = np.array(pickle.loads(droputils.allDropContents(ins[0], bufsize=8192)) , dtype=np.float64)
-        self.values = pickle.loads(droputils.allDropContents(ins[1]))
+        
+        self.data = [pickle.loads(droputils.allDropContents(inp)) for inp in ins]

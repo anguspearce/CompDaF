@@ -21,7 +21,7 @@ from util.message_provider import *
 from astropy.io import fits
 
 # GraphLoader python file
-#from backend.GraphLoader import *
+from backend.GraphLoader import *
 
 
 # Simple server using python websockets library
@@ -108,8 +108,8 @@ class DaliugeServer:
                 ack.file_info_extended.height = f[0].header['NAXIS2']
                 ack.file_info_extended.depth = 1
             
-            #self.graphLoader = GraphLoader("SampleGraph.graph", self.sessionId)
-            #self.graphLoader.createSession()
+            self.graphLoader = GraphLoader(self.sessionId)
+            self.graphLoader.createSession()
         except:
             ack.success = False
         
