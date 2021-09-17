@@ -7,8 +7,6 @@
 #include <raftio>
 #include <raftrandom>
 
-#include "Raftlib.h"
-
 template <typename T, typename F>
 class RaftStatistics : public raft::kernel
 {

@@ -2,57 +2,70 @@
 #define RAFTRWADIMAGE_TCC
 using namespace std::chrono;
 
+/*
+    RaftReadImage constructor
+    Assigns the fits pointer that will be used to
+    get the parameters and open file in the run.
+    Allocates memory for a row.
+*/
 template <typename T>
 RaftReadImage<T>::RaftReadImage(fitsfile *fptr) : raft::kernel()
 {
 
     status = 0;
     this->fptr = fptr;
+
+    //Getting the image parameters - naxis, naxes and bitpixs
     fits_get_img_param(this->fptr, 3, &bitpix, &naxis, naxes, &status);
 
-    //allocating memory for one row
+    //Allocating a memory for a row
     pixels = (float *)malloc(naxes[0] * sizeof(float));
 
     if (pixels == NULL)
     {
         printf("Memory allocation error\n");
     }
+
+    //set no of non-nan pixels to 0
     totPixels = 0;
     std::cout << naxes[0] << " " << naxes[1] << " " << naxes[2] << std::endl;
-    //input.addPort<T>("addvec");
+
+    //Declaring one output port called total.
     output.addPort<T>("total");
 }
 
-// template <typename T, typename F>
-// RaftReadImage<T, F>::RaftReadImage(const RaftReadImage &other) : raft::kernel()
-// {
-
-//     //input.addPort<T>("addvec");
-//     output.addPort<std::vector<T>>("total");
-// }
-
+/*
+    Method to access ports and do work
+    This method will specifically read a fits file
+    a row at a time and passes the row down the stream as
+    it is ready
+*/
 template <typename T>
 raft::kstatus RaftReadImage<T>::run()
 {
+    //Loop through depth
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
     {
-        //std::vector<std::vector<float>> channelData;
-        //std::cout << naxes[2] << " " << fpixel[2] << std::endl;
+        //Loop through rows
         for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
         {
+            //Timing the reading using cfitsio for testing
             auto start = high_resolution_clock::now();
 
             status = 0;
-            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status)) /* read row of pixels */
+
+            //Cfitsio reading an entire row into allocated pixels pointer array
+            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status))
             {
                 std::cout << "error" << std::endl;
-                break; /* jump out of loop on error */
+                break;
             }
-            std::vector<float> v;
-            //This below code prints out each pixel with the row number
-            //Is one way of accessing each pixel/row at a time
 
-            // printf(" %4d ", fpixel[1]); /* print row number */
+            //temp vector that will be passed down the stream
+            std::vector<float> v;
+
+            //looping through pixels and eliminating any nan pixels, incrementing counter
+            //and puishing to temp vector
             for (int ii = 0; ii < naxes[0]; ii++)
             {
                 if (std::isfinite(pixels[ii]))
@@ -61,25 +74,23 @@ raft::kstatus RaftReadImage<T>::run()
                     v.push_back(pixels[ii]);
                 }
             }
-            // std::cout << pixels[ii] << " "; /* print each value  */
-            //printf("\n");                       /* terminate line */
-            //imageData.push_back(v);
-            //channelData.push_back(v);
+
             auto stop = high_resolution_clock::now();
             auto duration = duration_cast<microseconds>(stop - start);
-            readTime+=duration.count();
-            //std::cout << "Raft Read Image Time: " << duration.count()*1e-6<<"s" << std::endl;
+            
+            //adding read time to global read time
+            readTime += duration.count();
+            
+            //allocate_s returns an object of the allocated memory
+            //which will be released to the downstream port. pushing the memory allocated
+            //to the consumer is handled by the returned object
+            //exiting the calling stack frame.
             auto c(output["total"].template allocate_s<T>());
             (*c) = v;
         }
-        //std::cout << totPixels << std::endl;
-        //auto c(output["total"].template allocate_s<std::vector<T>>());
-        //(*c) = channelData;
     }
-
-    //output["total"].send();
-    //input["addvec"].recycle(1);
-
+    //Since this is a prodducer kerner and only has an output (no inputs)
+    //must user stop to let the scheduler know when to exit the application
     return (raft::stop);
 }
 

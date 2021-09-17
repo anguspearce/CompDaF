@@ -8,8 +8,6 @@
 #include <raftio>
 #include <raftrandom>
 
-#include "Raftlib.h"
-
 template <typename T>
 class SplitVector : public raft::parallel_k
 {
