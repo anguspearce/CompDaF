@@ -10,7 +10,7 @@ std::string fName = "../sample.fits";
 FitsReader fitsFile = FitsReader(fName);
 bool errMargin(float a, float b)
 {
-  if (((b <= (a + (a * 0.0001))) && (b >= a - (a * 0.0001))) || (a == b))
+  if (((b <= (a + (a * 0.00001))) && (b >= a - (a * 0.00001))) || (a == b))
   {
     return true;
   }
