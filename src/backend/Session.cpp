@@ -93,6 +93,13 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
     
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
+
+    //Reading image pixels for region_histogram_data
+    CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
+    regionHistoData.set_file_id(file_id);
+    regionHistoData.set_region_id(-1);
+
+    SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
 }
 /*
     CARTA ICD that will return region histogram data 
