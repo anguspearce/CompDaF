@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import asyncio
+
 import websockets
 import os
+import math
+import dlg
 
 # Protocol buffers
 from protobufs.python import defs_pb2
@@ -16,6 +19,9 @@ from util.message_provider import *
 
 # Fits file reader
 from astropy.io import fits
+
+# GraphLoader python file
+#from backend.GraphLoader import *
 
 
 # Simple server using python websockets library
@@ -37,14 +43,14 @@ class DaliugeServer:
     async def host(self, websocket, port):
         message = await websocket.recv()
         messageType, messageId, messagePayload = strip_message_header(message)
+        self.sessionId = messageId
 
         # Using received session ID to get register viewer acknowledge 
-        ack, ack_type = construct_register_viewer_ack(int(messageId))
-        if(ack.success == True):
-
-            print("Successfully connected with session:", messageId)
+        ack, ack_type = construct_register_viewer_ack(int(self.sessionId))
+        if(ack.success):
+            print("Successfully connected with session:", self.sessionId)
         else:
-            print("Failed to connect with session:", messageId)
+            print("Failed to connect with session:", self.sessionId)
 
         # Sending register viewer ack
         await websocket.send(add_message_header(ack,ack_type))
@@ -91,56 +97,69 @@ class DaliugeServer:
         file = msg.directory + msg.file
         ack, ack_type = construct_open_file_ack()
         try:
-            with fits.open(file, memmap=True) as hdu:
-                print("in")
-                if "data" not in dir(hdu[0]):
-                    raise Exception("Unexpected format in fits file.")
-                # Seems to be an embedded list (12200 length, assume 8600 in each)
-                
-                d = hdu[0].data
-                print(type(d))
-                self.shape = d.shape
-                self.dimensions = len(self.shape)
-                print(self.shape)
-                print(self.dimensions)
-                chunk_size = 'auto' if self.shape[0] * self.shape[1] > 25000000 else (1000, 1000)
-                ack.success = True
+            with fits.open(file, memmap=True) as f:
+                # FILE INFO
+                ack.file_info.name = msg.file
+                ack.file_info.type = enums_pb2.FileType.FITS
+                ack.file_info.size = os.path.getsize(file)
+                # FILE INFO EXTENDED
+                ack.file_info_extended.dimensions = f[0].header['NAXIS']
+                ack.file_info_extended.width = f[0].header['NAXIS1']
+                ack.file_info_extended.height = f[0].header['NAXIS2']
+                ack.file_info_extended.depth = 1
+            
+            #self.graphLoader = GraphLoader("SampleGraph.graph", self.sessionId)
+            #self.graphLoader.createSession()
         except:
-            print("out")
             ack.success = False
+        
+        # Send protocol buffer ack
         await ws.send(add_message_header(ack, ack_type))
 
-    #    Author: Dylan Fouche
-    #    Date: 09/08/2021
-    #    Availability: https://github.com/DylanFouche/CADaFloP.git
-    async def on_file_info_request(self, ws, msg):
-        """Handle the FILE_INFO_REQUEST message.
+    async def on_set_histogram_requirements(self, ws, msg):
+        """Handle the SET_HISTOGRAM_REQUIREMENTS message.
+
         :param ws: the client websocket object
         :param msg: the client message recieved
-        """
-        file = msg.directory + msg.file
-        fileInfo = []
-        try:
-            with fits.open(file, memmap = True) as hdu:
-                fileInfo.append(hdu.filename())
-                fileInfo.append(os.path.getsize(file))
 
-                hdu.info()
-                date = (hdu[0].header['DATE'])
-                fileInfo.append(str(date))
-                
-        except IOError as e:
-            print( e)
-        ack, ack_type = construct_file_info_response(fileInfo)
-        await ws.send(add_message_header(ack, ack_type))
+        """
+        # logging.info("\t[Server]\tGot SET_HISTOGRAM_REQUIREMENTS.")
+        # try:
+        #     histo_num_bins = msg.histograms[0].num_bins if msg.histograms[0].num_bins > 0 else None
+        #     raw_histogram = self.image.get_region_histogram(
+        #         bins=histo_num_bins)
+        #     mean = self.image.get_mean()
+        #     std_dev = self.image.get_std_dev()
+        #     histo, histo_type = construct_region_histogram_data(
+        #         histo_num_bins, raw_histogram, mean, std_dev)
+        #     await ws.send(add_message_header(histo, histo_type))
+        #     logging.info("\t[Server]\tSent REGION_HISTOGRAM_DATA.")
+        # except:
+        #     logging.error("\t[Server]\tUnable to compute region histogram")
+        #     traceback.print_exc()
+
+    async def on_region_statistics(self, ws, msg):
+        """Handle the SET_STATS_REQUIREMENTS message.
+
+        :param ws: the client websocket object
+        :param msg: the client message recieved
+
+        """
+        # logging.info("\t[Server]\tGot SET_STATS_REQUIREMENTS.")
+        # try:
+        #     raw_stats = self.image.get_region_statistics()
+        #     stats, stats_type = construct_region_stats_data(raw_stats)
+        #     await ws.send(add_message_header(stats, stats_type))
+        #     logging.info("\t[Server]\tSent REGION_STATS_DATA.")
+        # except:
+        #     logging.error("\t[Server]\tUnable to compute region statistics")
+        #     traceback.print_exc()
     
 #    Author: Dylan Fouche
 #    Date: 09/08/2021
 #    Availability: https://github.com/DylanFouche/CADaFloP.git
     MESSAGE_TYPE_CODE_TO_EVENT_HANDLER = {
-        
-        enums_pb2.EventType.FILE_INFO_REQUEST : on_file_info_request,
         enums_pb2.EventType.OPEN_FILE : on_open_file,
-        
-        
+        enums_pb2.EventType.SET_STATS_REQUIREMENTS : on_region_statistics,
+        enums_pb2.EventType.SET_HISTOGRAM_REQUIREMENTS: on_set_histogram_requirements,
     }

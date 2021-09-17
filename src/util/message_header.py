@@ -21,7 +21,7 @@ from protobufs.python import region_histogram_pb2
 from protobufs.python import region_stats_pb2
 
 # The ICD protocol version number
-ICD_VERSION = 17
+ICD_VERSION = 21
 
 # struct EventHeader {
 #     uint16_t type;
