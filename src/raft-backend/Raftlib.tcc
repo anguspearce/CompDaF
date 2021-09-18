@@ -16,6 +16,7 @@ Raftlib<T>::Raftlib(long *naxes)
     this->height = naxes[1];
     this->depth = naxes[2];
     this->sumTotal = 0;
+    this->sumsquares = 0;
     this->max = INT_MIN;
     this->min = INT_MAX;
 }
