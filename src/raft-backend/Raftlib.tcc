@@ -10,7 +10,7 @@ using namespace std::chrono;
     Default min and max operations
 */
 template <typename T>
-Raftlib<T>::Raftlib(long *naxes)
+Raftlib<T>::Raftlib(long *naxes,int numThreads)
 {
     this->width = naxes[0];
     this->height = naxes[1];
@@ -19,6 +19,7 @@ Raftlib<T>::Raftlib(long *naxes)
     this->sumsquares = 0;
     this->max = INT_MIN;
     this->min = INT_MAX;
+    this->NUM_THREADS=numThreads;
 }
 
 /*
@@ -30,6 +31,7 @@ Raftlib<T>::Raftlib(long *naxes)
 template <typename T>
 void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
 {
+    std::cout<<"Num of threads: "<<NUM_THREADS<<std::endl;
     //Setting the types that will be passed into the kernels
     using type_v = std::vector<T>;
     using type_a = std::vector<std::pair<type_v, raft::signal>>;

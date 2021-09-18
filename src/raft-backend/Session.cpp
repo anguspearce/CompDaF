@@ -2,7 +2,7 @@
 #include "EventHeader.h"
 
 // Constructor for session class
-Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws) : _socket(ws)
+Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws,int numThreads) : _socket(ws), numThreads(numThreads)
 {
     _connected = true;
 }
@@ -56,7 +56,7 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
 
         std::string messageOut;
         std::vector<CARTA::HeaderEntry> headerEntries;
-        fitsFile = new FitsReader(filePath);
+        fitsFile = new FitsReader(filePath,numThreads);
 
         //Getting file_info
         fitsFile->FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);

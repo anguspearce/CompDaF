@@ -22,7 +22,7 @@ template <typename T>
 class Raftlib
 {
 public:
-    Raftlib(long *naxes);
+    Raftlib(long *naxes,int numThreads);
     void CalculateStatistics(fitsfile *fptr);
     void CalculateHistogram(fitsfile *fptr);
     void mean(long totPixels);
@@ -37,7 +37,7 @@ public:
     long getNoOfPixels();
 
 private:
-    const int NUM_THREADS = 5;
+    int NUM_THREADS = 1;
     long noOfPixels;
     long width;
     long height;
