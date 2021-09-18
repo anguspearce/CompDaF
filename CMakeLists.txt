@@ -72,14 +72,14 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        src/backend/RaftlibServer.cpp
-        src/backend/Session.cpp
-        src/backend/FitsReader.cpp
+        src/raft-backend/RaftlibServer.cpp
+        src/raft-backend/Session.cpp
+        src/raft-backend/FitsReader.cpp
          
         )
 
 add_executable(raftlib-server ${SOURCE_FILES})
-add_executable(unittest src/backend/UnitTests.cpp src/backend/FitsReader.cpp)
+add_executable(unittest src/raft-backend/UnitTests.cpp src/raft-backend/FitsReader.cpp)
 
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
 target_compile_options(raftlib-server PUBLIC ${RAFT_CFLAGS})

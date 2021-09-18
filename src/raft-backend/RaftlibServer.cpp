@@ -18,7 +18,10 @@ public:
     /* ws->getUserData returns one of these */
 
     Session *s;
-
+    int numThreads;
+    RaftlibServer(int numt){
+        numThreads=numt;
+    }
     /**
      * Method creates uWebSocket App with declared settings and calls the relevant handler functions.
      * 
@@ -61,7 +64,7 @@ public:
 
         uint32_t session_id = socket_data->session_id;
         std::string address = socket_data->address;
-        s = new Session(ws);
+        s = new Session(ws,numThreads);
     }
 
     /**
@@ -136,8 +139,16 @@ public:
 /**
  * Simple main method to create a server object and start it.
  */
-int main()
+int main(int argc, char* argv[])
 {
-    RaftlibServer server;
+    if(argc < 2){
+        std::cout<<"Please specify the number of threads \n./raftlib-server NUMTHREADS\nExample : ./raftlib-server 2"<<std::endl;
+        return 1;
+    }
+    else if(argc > 2){
+        std::cout<<"Invalid arguments \n./raftlib-server NUMTHREADS\nExample : ./raftlib-server 2"<<std::endl;
+        return 1;
+    }
+    RaftlibServer server(atoi(argv[1]));
     server.run();
 }

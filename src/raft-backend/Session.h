@@ -29,7 +29,7 @@ struct PerSocketData
 class Session
 {
 public:
-    Session(uWS::WebSocket<false, true, PerSocketData> *ws);
+    Session(uWS::WebSocket<false, true, PerSocketData> *ws,int numThreads);
     ~Session();
 
     // CARTA ICD
@@ -48,4 +48,5 @@ public:
 
     bool _connected;
     FitsReader *fitsFile;
+    int numThreads;
 };

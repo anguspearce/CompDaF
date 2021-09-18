@@ -7,7 +7,7 @@
 #include "EventHeader.h"
 
 std::string fName = "../sample.fits";
-FitsReader fitsFile = FitsReader(fName);
+FitsReader fitsFile = FitsReader(fName,5);
 bool errMargin(float a, float b)
 {
   if (((b <= (a + (a * 0.00001))) && (b >= a - (a * 0.00001))) || (a == b))
@@ -87,7 +87,7 @@ TEST(StatisticsTest, h_m51_b_s05_drz_sci)
 //     EXPECT_EQ(-1.0, squareRoot(-0.2));
 // }
 
-FitsReader fitsFileBigM = FitsReader("../bigM81.fits");
+FitsReader fitsFileBigM = FitsReader("../bigM81.fits",5);
 TEST(DimensionsTest, bigM81)
 {
   std::vector<std::string> hdu_list;
@@ -142,7 +142,7 @@ TEST(HistogramTest, BigM81)
   }
 }
 
-FitsReader fitsFileFake = FitsReader("../fakefits.fits");
+FitsReader fitsFileFake = FitsReader("../fakefits.fits",5);
 TEST(DimensionsTest, fakefits)
 {
   std::vector<std::string> hdu_list;

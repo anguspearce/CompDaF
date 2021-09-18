@@ -3,9 +3,10 @@
 /*
     Constructor of FitsReader that will store the file name. 
 */
-FitsReader::FitsReader(const std::string &filename)
+FitsReader::FitsReader(const std::string &filename,int numThreads)
 {
     _filename = filename;
+    this->numThreads=numThreads;
 }
 /*
     FillFileInfo is called when a user selects to open a file
@@ -133,7 +134,7 @@ void FitsReader::readImagePixels()
     long totPixels = 0;
 
     //Initialising a Raftlib class - constructing with image dimensions
-    Raftlib<float> raft(naxes);
+    Raftlib<float> raft(naxes,numThreads);
 
     //Calling region statistics implementation using raftlib
     raft.CalculateStatistics(fptr);
