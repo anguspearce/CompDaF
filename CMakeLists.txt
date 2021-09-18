@@ -47,6 +47,10 @@ FIND_PACKAGE(Threads)
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
+# Locate GTest
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
 set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 
 include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
@@ -61,6 +65,8 @@ set(LINK_LIBS
         z
         tbb
         cfitsio
+        ${GTEST_LIBRARIES} 
+        pthread
         ${CMAKE_THREAD_LIBS_INIT}
         )
 
@@ -69,9 +75,15 @@ set(SOURCE_FILES
         src/backend/RaftlibServer.cpp
         src/backend/Session.cpp
         src/backend/FitsReader.cpp
+         
         )
 
 add_executable(raftlib-server ${SOURCE_FILES})
+add_executable(unittest src/backend/UnitTests.cpp src/backend/FitsReader.cpp)
+
 target_include_directories(raftlib-server PUBLIC ${RAFT_INCLUDE_DIRS})
 target_compile_options(raftlib-server PUBLIC ${RAFT_CFLAGS})
 target_link_libraries(raftlib-server ${LINK_LIBS})
+target_include_directories(unittest PUBLIC ${RAFT_INCLUDE_DIRS})
+target_compile_options(unittest PUBLIC ${RAFT_CFLAGS})
+target_link_libraries(unittest ${LINK_LIBS})

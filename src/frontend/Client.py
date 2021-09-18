@@ -23,8 +23,9 @@ from util.message_provider import *
 class Client:
     # Init on object creation: Creates the url to connect the websocket to.
     def __init__(self):
-        self.url = "ws://localhost:9004"
+        self.url = "ws://localhost:3002"
         self.file_open = False
+        self.cube = False
 
     # Attempts to connect to specified backend and tries to register with the server.
     # Receives REGISTER_VIEWER_ACK and session creation success.
@@ -71,6 +72,8 @@ class Client:
                 try: 
                     if (option == "1"):
                         message, type = construct_set_histogram_requirements()
+                        if(self.cube):
+                            message.region_id = -2
                         return add_message_header(message, type)
                     elif (option == "2"):
                         message, type = construct_set_stats_requirements()
@@ -129,6 +132,9 @@ class Client:
             print("No of Header entries: ", len(
                 msg.file_info_extended.header_entries))
             print("")
+
+            if msg.file_info_extended.depth > 1:
+                self.cube = True
 
             # Awaiting region histogram data
             message = await ws.recv()

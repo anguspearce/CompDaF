@@ -11,35 +11,41 @@
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
 #include <uWebSockets/App.h>
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/enums.pb.h>
-
+#include <carta-protobuf/region_stats.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
+#include "FitsReader.h"
 #include "fitsio.h"
 
-struct PerSocketData {
+struct PerSocketData
+{
     uint32_t session_id;
     std::string address;
 };
-class Session {
+class Session
+{
 public:
-    Session(uWS::WebSocket<false, true, PerSocketData>* ws);
+    Session(uWS::WebSocket<false, true, PerSocketData> *ws);
     ~Session();
 
     // CARTA ICD
-    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
-    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
-
+    void OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t icd_version, uint32_t request_id);
+    void OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id);
+    void OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirements &message, uint32_t request_id);
+    void OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &message, uint32_t request_id);
     // Sending Protobuf Messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite &message, bool compress = true);
 
     // Task handling
-    uWS::WebSocket<false, true, PerSocketData>* _socket;
+    uWS::WebSocket<false, true, PerSocketData> *_socket;
 
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
-    
-    bool _connected;
 
+    bool _connected;
+    FitsReader *fitsFile;
 };

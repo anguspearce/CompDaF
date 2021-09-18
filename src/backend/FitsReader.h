@@ -7,22 +7,29 @@
 #include <iostream>
 #include <fstream>
 #include <carta-protobuf/defs.pb.h>
-#include "Raftlib.tcc"
+#include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
 
-class FitsReader {
+#include "Raftlib.h"
+#include <map>
+class FitsReader
+{
 public:
-    FitsReader(const std::string& filename);
-    void FillFileInfo(std::vector<std::string>& hdu_list,std::string& fName,int64_t& fSize,int& naxis,int& width,int& height,std::vector<CARTA::HeaderEntry>& headerEntries, std::string& error);
+    FitsReader(const std::string &filename);
+    void FillFileInfo(std::vector<std::string> &hdu_list, std::string &fName, int64_t &fSize, int &naxis, long *naxes, std::vector<CARTA::HeaderEntry> &headerEntries, std::string &error);
     void readImagePixels();
-    std::ifstream::pos_type filesize(const char* filename);
+    std::ifstream::pos_type filesize(const char *filename);
+    CARTA::RegionHistogramData& getRegionHistoData();
+    CARTA::RegionStatsData& getRegionStatsData();
 
 private:
-
     std::string _filename;
     fitsfile *fptr;
     std::vector<std::vector<float>> imageData;
-
-    
+    CARTA::RegionHistogramData regionHistoData;
+    CARTA::RegionStatsData regionStatsData;
 };
 #endif
-

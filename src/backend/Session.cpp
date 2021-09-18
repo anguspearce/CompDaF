@@ -1,16 +1,16 @@
 #include "Session.h"
-#include "FitsReader.h"
-
-#include <carta-protobuf/defs.pb.h>
 #include "EventHeader.h"
 
-#include "Raftlib.tcc"
-
+// Constructor for session class
 Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws) : _socket(ws)
 {
     _connected = true;
 }
 
+/* 
+    RegisterViewer ICD
+    Respondes with a register viewer acknowledgement
+*/
 void Session::OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t icd_version, uint32_t request_id)
 {
     auto session_id = message.session_id();
@@ -27,59 +27,110 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer &message, uint16_t ic
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
 
+/*
+    Open file ICD
+    This method gets the fields required in the open file acknowledge.
+    It will create an instance of FitsReader if the requested file is found the search directory.    
+*/
 void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
 {
     const auto &directory = message.directory();
     const auto &fileName = message.file();
     auto file_id(message.file_id());
     std::string filePath = directory + fileName;
-    bool success(true);
-
-    std::vector<std::string> hdu_list;
-    std::string fName;
-    int64_t fSize;
-    int naxis, width, height;
-    std::string messageOut;
-    std::vector<CARTA::HeaderEntry> headerEntries;
-    FitsReader fitsFile = FitsReader(filePath);
-
-    //Getting file_info
-    fitsFile.FillFileInfo(hdu_list, fName, fSize, naxis, width, height, headerEntries, messageOut);
-
-    //File info
     CARTA::FileInfo file_info;
-    file_info.set_name(fName);
-    file_info.set_size(fSize);
-    file_info.set_type(CARTA::FileType::FITS);
-    file_info.add_hdu_list(hdu_list[0]);
-
-    //File info extended
     CARTA::FileInfoExtended file_info_ext;
-    file_info_ext.set_dimensions(naxis);
-    file_info_ext.set_width(width);
-    file_info_ext.set_height(height);
-    for (int i = 0; i < headerEntries.size(); i++)
-    {
-        auto header_entry = file_info_ext.add_header_entries();
-        header_entry->set_name(headerEntries[i].name());
-        header_entry->set_value(headerEntries[i].value());
-        header_entry->set_comment(headerEntries[i].comment());
-    }
 
+    //check if file exists
+    bool success(false);
+    std::ifstream f(filePath.c_str());
+    if (f.good())
+    {
+        success = true;
+
+        std::vector<std::string> hdu_list;
+        std::string fName;
+        int64_t fSize;
+        int naxis, width, height, depth;
+        long naxes[3] = {1, 1, 1};
+
+        std::string messageOut;
+        std::vector<CARTA::HeaderEntry> headerEntries;
+        fitsFile = new FitsReader(filePath);
+
+        //Getting file_info
+        fitsFile->FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
+        width = naxes[0];
+        height = naxes[1];
+        depth = naxes[2];
+        //File info
+
+        file_info.set_name(fName);
+        file_info.set_size(fSize);
+        file_info.set_type(CARTA::FileType::FITS);
+        file_info.add_hdu_list(hdu_list[0]);
+
+        //File info extended
+        file_info_ext.set_dimensions(naxis);
+        file_info_ext.set_width(width);
+        file_info_ext.set_height(height);
+        file_info_ext.set_depth(depth);
+        for (int i = 0; i < headerEntries.size(); i++)
+        {
+            auto header_entry = file_info_ext.add_header_entries();
+            header_entry->set_name(headerEntries[i].name());
+            header_entry->set_value(headerEntries[i].value());
+            header_entry->set_comment(headerEntries[i].comment());
+        }
+        fitsFile->readImagePixels();
+    }
     CARTA::OpenFileAck ack_message;
     ack_message.set_success(success);
     ack_message.set_file_id(file_id);
     *ack_message.mutable_file_info() = file_info;
     *ack_message.mutable_file_info_extended() = file_info_ext;
+
+    
     // Send protobuf message to client
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
 
+    //Reading image pixels for region_histogram_data
+    CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
+    regionHistoData.set_file_id(file_id);
+    regionHistoData.set_region_id(-1);
 
-    //Reading image pixels for region_histogram_data 
-    fitsFile.readImagePixels();
-    //std::cout << file_info.name() << file_info.size() << file_info.type() <<file_info.hdu_list_size()<<std::endl;
+    SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
 }
+/*
+    CARTA ICD that will return region histogram data 
+*/
+void Session::OnSetRegionHistogramRequirements(const CARTA::SetHistogramRequirements &message, uint32_t request_id)
+{
 
+    auto file_id(message.file_id());
+    //Reading image pixels for region_histogram_data
+    CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
+    regionHistoData.set_file_id(file_id);
+    regionHistoData.set_region_id(-1);
+
+    SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
+}
+/*
+    CARTA ICD that will return region statistics data 
+*/
+void Session::OnSetRegionStatsRequirements(const CARTA::SetStatsRequirements &message, uint32_t request_id)
+{
+    auto file_id(message.file_id());
+    //Region statistics data
+    CARTA::RegionStatsData &regionStatsData = fitsFile->getRegionStatsData();
+    regionStatsData.set_file_id(file_id);
+    regionStatsData.set_region_id(-1);
+
+    SendEvent(CARTA::EventType::REGION_STATS_DATA, request_id, regionStatsData);
+}
+/*
+    Sending an event through a socket
+*/
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite &message, bool compress)
 {
     size_t message_length = message.ByteSizeLong();
