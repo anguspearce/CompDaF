@@ -31,18 +31,21 @@ raft::kstatus SplitVector<T>::run()
     //Looping through the multiple outputs
     for (auto &port : output)
     {
-        //Pop a number of vectors into t
-        input["a"].template pop_range(t, NUM_VECTORS);
+        if (input["a"].size() > 0)
+        {
+            //Pop a number of vectors into t
+            input["a"].template pop_range(t, NUM_VECTORS);
 
-        //allocate_s returns an object of the allocated memory
-        //which will be released to the downstream port. pushing the memory allocated
-        //to the consumer is handled by the returned object
-        //exiting the calling stack frame.  
-        auto c(port.template allocate_s<std::vector<std::pair<T, raft::signal>>>());
-        (*c) = t;
-        
-        //in order to release this object to the FIFO once it is written
-        port.send();
+            //allocate_s returns an object of the allocated memory
+            //which will be released to the downstream port. pushing the memory allocated
+            //to the consumer is handled by the returned object
+            //exiting the calling stack frame.
+            auto c(port.template allocate_s<std::vector<std::pair<T, raft::signal>>>());
+            (*c) = t;
+
+            //in order to release this object to the FIFO once it is written
+            port.send();
+        }
     }
 
     //Not a producer kernel - has input and outputs
