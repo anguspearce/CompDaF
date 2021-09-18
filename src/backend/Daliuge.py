@@ -22,75 +22,36 @@ logger = logging.getLogger(__name__)
 ## 
 # \file Daliuge.py
 ##
-# \brief FITSread\n
-# \details App that reads fits file data to memory
+# \brief ReadAndSplitApp\n
+# \details App that reads and splits a fits file into number of outputs.
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
-# \param[in] param/appclass/Daliuge.FITSread/String
+# \param[in] param/appclass/Daliuge.ReadAndSplitApp/String
 #     \~English Application class\n
 # \param[in] param/fileName/dummy.fits/String
 #     \~English Path to FITS file
 # \param[out] port/ndarray
-#     \~English Port outputting the ndarray view 
-# \par EAGLE_END
-class FITSread(BarrierAppDROP):
- 
-    compontent_meta = dlg_component('FITSread', 'FITS reader',
-                                    [dlg_batch_input('binary/*', [])],
-                                    [dlg_batch_output('binary/*', [])],
-                                    [dlg_streaming_input('binary/*')])
-
-    fileName = dlg_string_param('fileName','dummy.fits') # NOTE: The variable name has to match the value of the param name!
-
-    def initialize(self, **kwargs):
-        super(FITSread, self).initialize(**kwargs)
-
-    def run(self):
-        logger.info(f"Input FITS file: {self.fileName}")
-        # Fetch FITS data
-        self.loadFile(self.fileName)
-        for out in self.outputs:
-            d = pickle.dumps(self.data)
-            out.len = len(d)
-            out.write(d)
-
-    def loadFile(self, file):
-        try:
-            with fits.open(file, memmap=False) as hdu:
-                if "data" not in dir(hdu[0]):
-                    raise Exception("Unexpected format in fits file.")
-                
-                self.data = np.array(hdu[0].data, dtype=np.float64)
-        except:
-            raise Exception("Unable to load file.")
-
-
-##
-# \brief SplitApp\n
-# \details App that splits fits file into number of outputs.
-# \par EAGLE_START
-# \param gitrepo $(GIT_REPO)
-# \param version $(PROJECT_VERSION)
-# \param category PythonApp
-# \param[in] param/appclass/Daliuge.SplitApp/String
-#     \~English Application class\n
-# \param[in] port/ndarray
-#     \~English Port receiving entire ndarray
-# \param[out] port/ndarray
 #     \~English Port outputting the ndarray view
 # \par EAGLE_END
-class SplitApp(BarrierAppDROP):
+class ReadAndSplitApp(BarrierAppDROP):
     
-    compontent_meta = dlg_component('SplitApp', 'Split Vector App.',
+    compontent_meta = dlg_component('ReadAndSplitApp', 'Read And Split App',
                                     [dlg_batch_input('binary/*', [])],
                                     [dlg_batch_output('binary/*', [])],
                                     [dlg_streaming_input('binary/*')])
 
+    fileName = dlg_string_param('fileName','../sample.fits') # NOTE: The variable name has to match the value of the param name!
+
+    def initialize(self, **kwargs):
+        super(ReadAndSplitApp, self).initialize(**kwargs)
+
     def run(self):
+        startTime = time.perf_counter()
+
         # Fetch data from input port
-        self.getInputArrays()
+        self.loadFile(self.fileName)
         # self.outputs is a list of output ports
         outs = self.outputs
         # Split the array into the number of output ports 
@@ -107,7 +68,6 @@ class SplitApp(BarrierAppDROP):
         bins = self.getNumBins()
 
         #t1 = time.perf_counter() # Timer 2 
-        
         #t = t1-t
         
         
@@ -116,27 +76,27 @@ class SplitApp(BarrierAppDROP):
         z = zip(outs, arrs)
         # Pass pickled data to each respective output
         for [out, arr] in z:
-            d = pickle.dumps([arr, min, max, bins, t])
+            d = pickle.dumps([arr, min, max, bins, startTime])
             out.len = len(d)
             out.write(d)
             
     
     def getNumBins(self):
-        # Returns the max between 2 and square root of (width * height) of the image
-        return int(max(2, math.sqrt(self.data.shape[0] * self.data.shape[1])))
+        """ Return the max between 2 and square root of (width * height) of the image """
 
-    def getInputArrays(self):
-        """
-        Create the input array from all inputs received. Shape is
-        (<#inputs>, <#elements>), where #elements is the length of the
-        vector received from one input.
-        """
-        ins = self.inputs
-        if len(ins) != 1:
-            raise Exception(
-                'Only one input should have been added to %r' % self)
-        
-        self.data = np.array(pickle.loads(droputils.allDropContents(ins[0], bufsize=8192)) , dtype= np.float64)
+        return int(max(2, math.sqrt(self.data.shape[0] * self.data.shape[1])))
+    
+    def loadFile(self, file):
+        """ Loads the specified FITS file using astropy """
+
+        try:
+            with fits.open(file, memmap=False) as hdu:
+                if "data" not in dir(hdu[0]):
+                    raise Exception("Unexpected format in fits file.")
+                
+                self.data = np.array(hdu[0].data, dtype=np.float64)
+        except:
+            raise Exception("Unable to load file.")
 
 
 
@@ -167,10 +127,10 @@ class ComputeStatsApp(BarrierAppDROP):
     def run(self):
         # Fetch data from input port in form [arr, min, max, bins, t] (t is the time taken to calculate min, max, number of bins over entire data set)
         self.getInputArrays()
-        # data is the numpy array view 
+        # data is the numpy array view (partitioned data to compute statistics on)
         data = np.array(self.d[0], dtype= np.float64)
 
-        t0 = time.perf_counter() # Timer 1
+        
 
         # Sum of data
         sum = np.nansum(data, dtype=np.float64)
@@ -181,11 +141,9 @@ class ComputeStatsApp(BarrierAppDROP):
         # Histogram that uses the received number of bins, min, and max, calculated in the previous Drop
         hist, bins = np.histogram(data, self.d[3], (self.d[1], self.d[2]))
 
-        t1 = time.perf_counter() # Timer 2
-        t1 = t1-t0
 
         # Combining calcalation results to send to output Drop, as well as min, max, bins, t from prev Drop
-        stats = [sum, sumSq, pixels, hist, t1, self.d[1], self.d[2], self.d[3], self.d[4]]
+        stats = [sum, sumSq, pixels, hist, self.d[1], self.d[2], self.d[3], self.d[4]]
         stats = pickle.dumps(stats)
         
         # Only one output should have been added
@@ -199,11 +157,8 @@ class ComputeStatsApp(BarrierAppDROP):
             o.write(stats)
 
     def getInputArrays(self):
-        """
-        Create the input array from all inputs received. Shape is
-        (<#inputs>, <#elements>), where #elements is the length of the
-        vector received from one input.
-        """
+        """ Fetch the input array from the only port  - format is [arr, min, max, bins, t]"""
+
         ins = self.inputs
         if len(ins) != 1:
             raise Exception(
@@ -243,10 +198,8 @@ class GatherApp(BarrierAppDROP):
         sumSq = 0
         pixels = 0
         hist = None
-        
 
-        #t0 = time.perf_counter() # Timer 1
-
+        # Iterate through each embedded list inside self.data 
         for i in self.data:
             sum += i[0]
             sumSq += i[1]
@@ -255,34 +208,36 @@ class GatherApp(BarrierAppDROP):
                 hist = i[3]
             else:
                 hist += i[3]
-            t += i[4]
         mean = sum/pixels
         stddev = np.sqrt(sumSq/pixels - mean**2) #CHECK WHETHER THIS MESSES UP RESULTS (sumSq/pixels may not give float)
         
         t1 = time.perf_counter() # Timer 2
         
-        t = t1 - self.data[0][8]
-        #t += (t1-t0) # Add time taken to compare results of each Drop
+        t = t1 - self.data[0][7]
+        
 
         # Combining calculation results to send to output Drop
         stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
-        stats = stats.format(sum=sum, mean=mean, min=self.data[0][5], max=self.data[0][6], bins=self.data[0][7], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
+        stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
+        
         # At least one output should have been added
         outs = self.outputs
         if len(outs) < 1:
             raise Exception(
                 'At least one output should have been added to %r' % self)
+        # Write the final output to a file
         for o in outs:
             o.len = len(stats.encode())
             o.write(stats.encode())
 
 
     def getInputArrays(self):
-        """
+        """""
         Create the input array from all inputs received. Shape is
         (<#inputs>, <#elements>), where #elements is the length of the
-        vector received from one input.
-        """
+        vector received from one input. 
+        Format of embedded list: [sum, sumSq, pixels, hist, min, max, bins, startTime]
+        """""
         ins = self.inputs
         if len(ins) < 1:
             raise Exception(
