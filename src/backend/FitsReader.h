@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <carta-protobuf/defs.pb.h>
-#include "Raftlib.h"
+#include "Raftlib.tcc"
 
 class FitsReader {
 public:
@@ -20,6 +20,7 @@ private:
 
     std::string _filename;
     fitsfile *fptr;
+    std::vector<std::vector<float>> imageData;
 
     
 };
