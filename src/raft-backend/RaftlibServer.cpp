@@ -19,8 +19,10 @@ public:
 
     Session *s;
     int numThreads;
-    RaftlibServer(int numt){
+    int portNumber;
+    RaftlibServer(int portNum,int numt){
         numThreads=numt;
+        portNumber=portNum;
     }
     /**
      * Method creates uWebSocket App with declared settings and calls the relevant handler functions.
@@ -42,11 +44,11 @@ public:
                                             .close = [](auto * /*ws*/, int /*code*/, std::string_view /*message*/)
                                             {
             /* You may access ws->getUserData() here */ }})
-            .listen(9001, [](auto *listen_socket)
+            .listen(portNumber, [&](auto *listen_socket)
                     {
                         if (listen_socket)
                         {
-                            std::cout << "Listening on port " << 9001 << std::endl;
+                            std::cout << "Listening on port " << portNumber << std::endl;
                         }
                     })
             .run();
@@ -141,14 +143,14 @@ public:
  */
 int main(int argc, char* argv[])
 {
-    if(argc < 2){
-        std::cout<<"Please specify the number of threads \n./raftlib-server NUMTHREADS\nExample : ./raftlib-server 2"<<std::endl;
+    if(argc < 3){
+        std::cout<<"Please specify the port number and number of threads \n./raftlib-server PORTNUMBER NUMTHREADS\nExample : ./raftlib-server 9001 5"<<std::endl;
         return 1;
     }
-    else if(argc > 2){
-        std::cout<<"Invalid arguments \n./raftlib-server NUMTHREADS\nExample : ./raftlib-server 2"<<std::endl;
+    else if(argc > 3){
+        std::cout<<"Invalid arguments \n./raftlib-server PORTNUMBER NUMTHREADS\nExample : ./raftlib-server 9001 5"<<std::endl;
         return 1;
     }
-    RaftlibServer server(atoi(argv[1]));
+    RaftlibServer server(atoi(argv[1]),atoi(argv[2]));
     server.run();
 }
