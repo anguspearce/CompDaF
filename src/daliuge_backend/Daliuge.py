@@ -207,7 +207,7 @@ class GatherApp(BarrierAppDROP):
             if hist is None:
                 hist = i[3]
             else:
-                hist += i[3]
+                np.add(hist, i[3])
         mean = sum/pixels
         stddev = np.sqrt(sumSq/pixels - mean**2) #CHECK WHETHER THIS MESSES UP RESULTS (sumSq/pixels may not give float)
         
@@ -221,7 +221,7 @@ class GatherApp(BarrierAppDROP):
         # stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
         stats = {"sum" : sum, "mean" : mean, 
                 "min" : self.data[0][4], "max" : self.data[0][5], "bins" : self.data[0][6],
-                "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "time" : t}
+                "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "hist" : hist, "time" : t}
         
         # Write the final output to a file
         pickle.dump(stats, open("../code/finalOutput.pickle", "wb"))
@@ -238,6 +238,5 @@ class GatherApp(BarrierAppDROP):
         if len(ins) < 1:
             raise Exception(
                 'At least one input should have been added to %r' % self) 
-        
         
         self.data = [pickle.loads(droputils.allDropContents(inp)) for inp in ins]

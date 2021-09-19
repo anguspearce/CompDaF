@@ -106,6 +106,7 @@ class Client:
         while True:
             message = await self.producer()
             if message == None:
+                await websocket.close()
                 exit(0)
             await websocket.send(message)
             message = await websocket.recv()
@@ -142,7 +143,6 @@ class Client:
             handler = self.MESSAGE_TYPE_CODE_TO_EVENT_HANDLER.get(messageType)
             await handler(self, ws, messagePayload)
         else:
-            print(msg.message)
             print("Failed to find file.")
         print("")
 

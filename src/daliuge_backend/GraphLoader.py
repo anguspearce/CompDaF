@@ -14,7 +14,7 @@ class GraphLoader():
         self.sessionId = str(sessionId)
         self.manager = NodeManagerClient(port = self.port)
     
-    def createSession(self):
+    def createSession(self, file):
         # Read in the JSON Graph File
         try:
             print("Opening graph file.")
@@ -33,7 +33,18 @@ class GraphLoader():
             self.manager.destroySession(self.sessionId)
             self.manager.createSession(self.sessionId)
             print("Recreated session:", self.sessionId)
-            
+        
+        # Find the first Drop in the graph 
+        for comp in self.graph:
+            if comp.get('rank') == [0]:
+                if comp.get('iid') == '0':
+                    self.firstDrop = comp.get('oid')
+                    comp["fileName"] = file
+                    break
+        # Ensure that the Drop was found
+        if self.firstDrop == None:
+            return 0
+        
         # Append graph
         try:
             self.manager.addGraphSpec(self.sessionId, self.graph)
@@ -43,12 +54,6 @@ class GraphLoader():
             print("Failed to append graph, it is either corrupted or not a Physical Graph.")
             return 0
         
-        # Find the first Drop in the graph 
-        for l in self.graph:
-            if l.get('rank') == [0]:
-                if l.get('iid') == '0':
-                    self.firstDrop = l.get('oid')
-                    break
         # Deploy session using sessionId and a list of Drop ID's that will be executed first
         try:
             self.manager.deploySession(self.sessionId, [self.firstDrop]) 
