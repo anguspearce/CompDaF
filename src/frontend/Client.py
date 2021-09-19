@@ -22,8 +22,8 @@ from util.message_provider import *
 
 class Client:
     # Init on object creation: Creates the url to connect the websocket to.
-    def __init__(self):
-        self.url = "ws://localhost:3002"
+    def __init__(self, port):
+        self.url = "ws://localhost:" + str(port)
         self.file_open = False
         self.cube = False
 
