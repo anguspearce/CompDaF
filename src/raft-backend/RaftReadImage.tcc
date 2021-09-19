@@ -89,6 +89,7 @@ raft::kstatus RaftReadImage<T>::run()
             (*c) = v;
         }
     }
+    free(pixels);
     //Since this is a prodducer kerner and only has an output (no inputs)
     //must user stop to let the scheduler know when to exit the application
     return (raft::stop);
