@@ -28,9 +28,9 @@ logger = logging.getLogger(__name__)
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
-# \param[in] param/appclass/Daliuge.ReadAndSplitApp/String
+# \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.ReadAndSplitApp/String
 #     \~English Application class\n
-# \param[in] param/fileName/dummy.fits/String
+# \param[in] param/fileName/sample.fits/String
 #     \~English Path to FITS file
 # \param[out] port/ndarray
 #     \~English Port outputting the ndarray view
@@ -42,16 +42,18 @@ class ReadAndSplitApp(BarrierAppDROP):
                                     [dlg_batch_output('binary/*', [])],
                                     [dlg_streaming_input('binary/*')])
 
-    fileName = dlg_string_param('fileName','../sample.fits') # NOTE: The variable name has to match the value of the param name!
+    # fileName is relative to tmp/.dlg/code/ directory
+    fileName = dlg_string_param('fileName','sample.fits') # NOTE: The variable name has to match the value of the param name!
 
     def initialize(self, **kwargs):
         super(ReadAndSplitApp, self).initialize(**kwargs)
+        self.fileName = os.path.normpath("../testdata/" + self.fileName)
 
     def run(self):
         startTime = time.perf_counter()
 
         # Fetch data from input port
-        self.loadFile(self.fileName)
+        self.loadFile()
         # self.outputs is a list of output ports
         outs = self.outputs
         # Split the array into the number of output ports 
@@ -86,11 +88,11 @@ class ReadAndSplitApp(BarrierAppDROP):
 
         return int(max(2, math.sqrt(self.data.shape[0] * self.data.shape[1])))
     
-    def loadFile(self, file):
+    def loadFile(self):
         """ Loads the specified FITS file using astropy """
 
         try:
-            with fits.open(file, memmap=False) as hdu:
+            with fits.open(self.fileName, memmap=False) as hdu:
                 if "data" not in dir(hdu[0]):
                     raise Exception("Unexpected format in fits file.")
                 
@@ -107,7 +109,7 @@ class ReadAndSplitApp(BarrierAppDROP):
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
-# \param[in] param/appclass/Daliuge.ComputeStatsApp/String
+# \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.ComputeStatsApp/String
 #             \~English Application class\n
 # \param[in] port/ndarray
 #             \~English Port receiving ndarray view
@@ -174,12 +176,10 @@ class ComputeStatsApp(BarrierAppDROP):
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
-# \param[in] param/appclass/Daliuge.GatherApp/String
+# \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.GatherApp/String
 #     \~English Application class\n
 # \param[in] port/list
 #     \~English Port receiving list of statistics to combine
-# \param[out] port/string
-#     \~English Port outputting final results
 # \par EAGLE_END
 class GatherApp(BarrierAppDROP):
     
@@ -217,21 +217,14 @@ class GatherApp(BarrierAppDROP):
         
 
         # Combining calculation results to send to output Drop
-        stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
-        stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
+        # stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
+        # stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
         stats = {"sum" : sum, "mean" : mean, 
                 "min" : self.data[0][4], "max" : self.data[0][5], "bins" : self.data[0][6],
                 "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "time" : t}
-        # At least one output should have been added
-        outs = self.outputs
-        if len(outs) < 1:
-            raise Exception(
-                'At least one output should have been added to %r' % self)
+        
         # Write the final output to a file
-        for o in outs:
-            d = pickle.dumps(stats)
-            o.len = len(d)
-            o.write(d)
+        pickle.dump(stats, open("../code/finalOutput.pickle", "wb"))
 
 
     def getInputArrays(self):

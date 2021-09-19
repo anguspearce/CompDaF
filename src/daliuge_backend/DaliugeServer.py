@@ -29,20 +29,26 @@ from daliuge_backend.GraphLoader import *
 class DaliugeServer:
 
     def __init__(self, graphSpec):
-        self.graphSpec = graphSpec
+        self.outputPath = os.path.normpath("../finalOutput.pickle")
+        self.graphSpec = os.path.normpath("src/graphs/" + str(graphSpec))
+        self.data = None # Only initialise this with data once the graph has run
+        
         # Checking if the graph specification file exists
         if not os.path.exists(self.graphSpec):
             raise FileNotFoundError("Graph specification not found.")
 
+        # If a previous output exists, delete it 
+        if os.path.exists(self.outputPath):
+            os.remove(self.outputPath)
+
         # Attempt to start to the server
         try:
             print("Waiting for connection.")
-            self.start_server = websockets.serve(self.host, "localhost", 9004, ping_interval = None)
+            self.start_server = websockets.serve(self.host, "localhost", 9002, ping_interval = None)
             asyncio.get_event_loop().run_until_complete(self.start_server)
             asyncio.get_event_loop().run_forever()
         except Exception as e:
-            print("Failed to start server. Exception:")
-            print(e)
+            print("Failed to start server. Exception:", e)
             exit(0)
 
     # Host function which awaits incoming connection, registers viewer and creates a session per client.
@@ -92,13 +98,18 @@ class DaliugeServer:
 
     def executeGraph(self):
         # Begin the execution of the session graph
-        self.graphLoader.createSession()
+        result = self.graphLoader.createSession()
+        if result == 0:
+            return 0
         # Wait until the daliuge-engine has finished executing the graph
-        while not os.path.exists("../../finalOutput"):
-            sleep(0.5)
+        while os.path.exists(self.outputPath) == False:
+            continue
+
         # Load and unpickle the data from file
-        self.data = pickle.load("../../finalOutput")
-        print(self.data)
+        with open(self.outputPath, "rb") as pkl:
+            self.data = pickle.load(pkl)
+        
+        return 1
 
 
     ### Handling Protocol Buffers ###
@@ -125,8 +136,14 @@ class DaliugeServer:
                 ack.file_info_extended.width = f[0].header['NAXIS1']
                 ack.file_info_extended.height = f[0].header['NAXIS2']
                 ack.file_info_extended.depth = 1
+
             # Call method to execute and wait till the graph finishes
-            self.executeGraph() # Maybe need await
+            code = self.executeGraph()
+            if code == 0:
+                ack.success = False
+                await ws.send(add_message_header(ack, ack_type))
+                await ws.close()
+                exit(0)
         except:
             ack.success = False
 
