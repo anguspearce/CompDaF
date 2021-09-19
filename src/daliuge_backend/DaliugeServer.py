@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import asyncio
-
+from time import sleep
+import pickle
 import websockets
 import os
-import math
-import dlg
+
 
 # Protocol buffers
 from protobufs.python import defs_pb2
@@ -21,14 +21,20 @@ from util.message_provider import *
 from astropy.io import fits
 
 # GraphLoader python file
-from backend.GraphLoader import *
+from daliuge_backend.GraphLoader import *
 
 
-# Simple server using python websockets library
-# Handles and calls relevant functions using DALiuGE
+""" A server class that uses websockets to accept an incoming connection
+    and """
 class DaliugeServer:
-    # Initialise server by calling the host function and running the event loop forever.
-    def __init__(self):
+
+    def __init__(self, graphSpec):
+        self.graphSpec = graphSpec
+        # Checking if the graph specification file exists
+        if not os.path.exists(self.graphSpec):
+            raise FileNotFoundError("Graph specification not found.")
+
+        # Attempt to start to the server
         try:
             print("Waiting for connection.")
             self.start_server = websockets.serve(self.host, "localhost", 9004, ping_interval = None)
@@ -49,6 +55,8 @@ class DaliugeServer:
         ack, ack_type = construct_register_viewer_ack(int(self.sessionId))
         if(ack.success):
             print("Successfully connected with session:", self.sessionId)
+
+            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec)
         else:
             print("Failed to connect with session:", self.sessionId)
 
@@ -64,9 +72,8 @@ class DaliugeServer:
             async for message in websocket:
                 await self.consumer(websocket, message)
         except Exception as e:
-            print("Exception raised:")
-            print(e)
-            websocket.close()
+            print("Exception raised:", e)
+            await websocket.close()
             exit(0)
 
     # Consumer function that will receive every message from the receiver and handle it.
@@ -82,6 +89,17 @@ class DaliugeServer:
             print(e)
             await websocket.send("Failed")
             await self.receiver(websocket, message)
+
+    def executeGraph(self):
+        # Begin the execution of the session graph
+        self.graphLoader.createSession()
+        # Wait until the daliuge-engine has finished executing the graph
+        while not os.path.exists("../../finalOutput"):
+            sleep(0.5)
+        # Load and unpickle the data from file
+        self.data = pickle.load("../../finalOutput")
+        print(self.data)
+
 
     ### Handling Protocol Buffers ###
     #    Author: Dylan Fouche
@@ -107,12 +125,11 @@ class DaliugeServer:
                 ack.file_info_extended.width = f[0].header['NAXIS1']
                 ack.file_info_extended.height = f[0].header['NAXIS2']
                 ack.file_info_extended.depth = 1
-            
-            self.graphLoader = GraphLoader(self.sessionId)
-            self.graphLoader.createSession()
+            # Call method to execute and wait till the graph finishes
+            self.executeGraph() # Maybe need await
         except:
             ack.success = False
-        
+
         # Send protocol buffer ack
         await ws.send(add_message_header(ack, ack_type))
 

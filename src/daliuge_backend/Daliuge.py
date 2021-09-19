@@ -219,7 +219,9 @@ class GatherApp(BarrierAppDROP):
         # Combining calculation results to send to output Drop
         stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
         stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
-        
+        stats = {"sum" : sum, "mean" : mean, 
+                "min" : self.data[0][4], "max" : self.data[0][5], "bins" : self.data[0][6],
+                "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "time" : t}
         # At least one output should have been added
         outs = self.outputs
         if len(outs) < 1:
@@ -227,8 +229,9 @@ class GatherApp(BarrierAppDROP):
                 'At least one output should have been added to %r' % self)
         # Write the final output to a file
         for o in outs:
-            o.len = len(stats.encode())
-            o.write(stats.encode())
+            d = pickle.dumps(stats)
+            o.len = len(d)
+            o.write(d)
 
 
     def getInputArrays(self):

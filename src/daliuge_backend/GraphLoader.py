@@ -5,16 +5,23 @@ import logging
 import json
 
 class GraphLoader():
-    def __init__(self, sessionId) -> None:
+    def __init__(self, sessionId, graphSpec) -> None:
         self.port = 8001
-        self.graphSpec = "daliuge.graph"
+        self.graphSpec = graphSpec
+        self.graph = None
         self.firstDrop = None
         self.sessionId = sessionId
         self.manager = NodeManagerClient(port = self.port)
     
     def createSession(self):
         # Read in the JSON Graph File
-        self.graphSpec = self.read_json(self.graphSpec)
+        try:
+            print("Opening graph file.")
+            with open(self.graphSpec, 'r') as f:
+                self.graph = json.load(f)
+        except:
+            print("Failed to open graph file.")
+            return 0
 
         # Create session 
         try:
@@ -32,6 +39,7 @@ class GraphLoader():
             print("Successfully appended graph to the Node Manager.")
         except:
             print("Failed to append graph, it is either corrupted or not a Physical Graph.")
+            return 0
         
         # Find the first Drop in the graph 
         for l in self.graphSpec:
@@ -39,17 +47,9 @@ class GraphLoader():
                 if l.get('iid') == '0':
                     self.firstDrop = l.get('oid')
                     break
-        # Deploy session, execute first Drop to cascade into the rest
+        # Deploy session using sessionId and a list of Drop ID's that will be executed first
         try:
-            self.manager.deploySession(self.sessionId, [self.firstDrop])
+            self.manager.deploySession(self.sessionId, [self.firstDrop]) 
             print("Successfully deployed session ", self.sessionId)
         except:
             print("Failed to deploy session", self.sessionId)
-    
-    def read_json(self, file):
-        try:
-            print("Opening graph file.")
-            with open(file, 'r') as f:
-                return json.load(f)
-        except:
-            print("Failed to open graph file.")
