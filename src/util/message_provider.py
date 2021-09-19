@@ -146,6 +146,8 @@ def construct_region_histogram_data(num_bins, bins, mean, std_dev):
     histogram.bins.extend(bins)
     histogram.mean = mean
     histogram.std_dev = std_dev
+    histogram.first_bin_center = -1
+    histogram.bin_width = -1
     message.histograms.append(histogram)
     return (message, message_type)
 
