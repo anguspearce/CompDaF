@@ -35,11 +35,11 @@ class GraphLoader():
             print("Recreated session:", self.sessionId)
         
         # Find the first Drop in the graph 
-        for comp in self.graph:
-            if comp.get('rank') == [0]:
-                if comp.get('iid') == '0':
-                    self.firstDrop = comp.get('oid')
-                    comp["fileName"] = file
+        for drop in self.graph:
+            if drop.get('rank') == [0]:
+                if drop.get('iid') == '0':
+                    self.firstDrop = drop.get('oid')
+                    drop["fileName"] = file
                     break
         # Ensure that the Drop was found
         if self.firstDrop == None:

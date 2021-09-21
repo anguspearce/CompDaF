@@ -59,26 +59,21 @@ class ReadAndSplitApp(BarrierAppDROP):
         # Split the array into the number of output ports 
         arrs = np.array_split(self.data, len(outs))
         
-        
-        t = time.perf_counter() # Timer 1
 
         # Max of entire data set (ignoring NaN)
         max = np.nanmax(self.data) 
         # Min of entire data set (ignoring NaN)
         min = np.nanmin(self.data)
         # Get number of bins 
-        bins = self.getNumBins()
-
-        #t1 = time.perf_counter() # Timer 2 
-        #t = t1-t
+        bins = self.getNumBins()      
         
-        
+        t = time.perf_counter() # Timer 1  
 
         # Zip each array view to a corresponding output (parallel iteration)
         z = zip(outs, arrs)
         # Pass pickled data to each respective output
         for [out, arr] in z:
-            d = pickle.dumps([arr, min, max, bins, startTime])
+            d = pickle.dumps([arr, min, max, bins, t - startTime, t])
             out.len = len(d)
             out.write(d)
             
@@ -145,7 +140,7 @@ class ComputeStatsApp(BarrierAppDROP):
 
 
         # Combining calcalation results to send to output Drop, as well as min, max, bins, t from prev Drop
-        stats = [sum, sumSq, pixels, hist, self.d[1], self.d[2], self.d[3], self.d[4]]
+        stats = [sum, sumSq, pixels, hist, self.d[1], self.d[2], self.d[3], self.d[4], self.d[5]]
         stats = pickle.dumps(stats)
         
         # Only one output should have been added
@@ -213,15 +208,15 @@ class GatherApp(BarrierAppDROP):
         
         t1 = time.perf_counter() # Timer 2
         
-        t = t1 - self.data[0][7]
-        
+        statsComputeTime = t1 - self.data[0][8]
+        readTime = self.data[0][7]
 
         # Combining calculation results to send to output Drop
         # stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nNumber of bins: {bins} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
         # stats = stats.format(sum=sum, mean=mean, min=self.data[0][4], max=self.data[0][5], bins=self.data[0][6], stddev=stddev, sumSq=sumSq, pixels=pixels, t=t)
         stats = {"sum" : sum, "mean" : mean, 
                 "min" : self.data[0][4], "max" : self.data[0][5], "bins" : self.data[0][6],
-                "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "hist" : hist, "time" : t}
+                "stddev" : stddev, "sumsq" : sumSq, "pixels" : pixels, "hist" : hist, "Stats Compute Time" : statsComputeTime, "Read Time" : readTime}
         
         # Write the final output to a file
         pickle.dump(stats, open("../code/finalOutput.pickle", "wb"))
