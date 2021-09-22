@@ -28,7 +28,7 @@ from daliuge_backend.GraphLoader import *
     and """
 class DaliugeServer:
 
-    def __init__(self, graphSpec):
+    def __init__(self, graphSpec, port):
         self.outputPath = os.path.normpath("../finalOutput.pickle")
         self.graphSpec = os.path.normpath("src/graphs/" + str(graphSpec))
         self.dataDir = "../../testdata/"
@@ -45,7 +45,7 @@ class DaliugeServer:
         # Attempt to start to the server
         try:
             print("Waiting for connection.")
-            self.start_server = websockets.serve(self.host, "localhost", 9006, ping_interval = None)
+            self.start_server = websockets.serve(self.host, "localhost", port, ping_interval = None)
             asyncio.get_event_loop().run_until_complete(self.start_server)
             asyncio.get_event_loop().run_forever()
         except Exception as e:

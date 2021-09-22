@@ -3,16 +3,16 @@
 from daliuge_backend.DaliugeServer import *
 from sys import argv
 
-def main(arg):
+def main(args):
     # Creates instance of DaliugeServer class
-    server = DaliugeServer(arg)
+    server = DaliugeServer(args[0], args[1])
 
 
 if __name__ == "__main__":
     args = argv[1:]
     # Check if one argument was provided
-    if len(args) != 1:
-        raise Exception("Argument 'graphSpec' required.")
-    main(args[0])
+    if len(args) != 2:
+        raise Exception("Argument 'graphSpec' and 'port' required.")
+    main(args)
 
     
