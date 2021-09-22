@@ -16,10 +16,11 @@ RaftReadImage<T>::RaftReadImage(fitsfile *fptr) : raft::kernel()
     this->fptr = fptr;
 
     //Getting the image parameters - naxis, naxes and bitpixs
-    fits_get_img_param(this->fptr, 3, &bitpix, &naxis, naxes, &status);
+    fits_get_img_paramll(this->fptr, 3, &bitpix, &naxis, naxes, &status);
 
     //Allocating a memory for a row
-    pixels = (float *)malloc(naxes[0] * sizeof(float));
+    //pixels = (float *)malloc(naxes[0] * sizeof(float));
+    pixels = new float[naxes[0]];
 
     if (pixels == NULL)
     {
@@ -55,7 +56,7 @@ raft::kstatus RaftReadImage<T>::run()
             status = 0;
 
             //Cfitsio reading an entire row into allocated pixels pointer array
-            if (fits_read_pix(fptr, TFLOAT, fpixel, naxes[0], NULL, pixels, NULL, &status))
+            if (fits_read_pixll(fptr, TFLOAT, fpixel, naxes[0], nullptr, pixels, nullptr, &status))
             {
                 std::cout << "error" << std::endl;
                 break;
@@ -89,7 +90,7 @@ raft::kstatus RaftReadImage<T>::run()
             (*c) = v;
         }
     }
-    free(pixels);
+    delete(pixels);
     //Since this is a prodducer kerner and only has an output (no inputs)
     //must user stop to let the scheduler know when to exit the application
     return (raft::stop);

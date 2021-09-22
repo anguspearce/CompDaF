@@ -13,7 +13,7 @@ template <typename T>
 class RaftReadImage : public raft::kernel
 {
 public:
-    long naxes[3] = {1, 1, 1},fpixel[3]={1, 1, 1};
+    long long naxes[3] = {1, 1, 1},fpixel[3]={1, 1, 1};
     int bitpix, naxis;
     int status;
     long totPixels;
