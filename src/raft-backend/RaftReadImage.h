@@ -21,7 +21,10 @@ public:
     fitsfile *fptr;
     long readTime=0;
     RaftReadImage(fitsfile *fptr);
+    RaftReadImage(const RaftReadImage &other);
     virtual raft::kstatus run();
+    CLONE();
+
 };
 #include "RaftReadImage.tcc"
 #endif

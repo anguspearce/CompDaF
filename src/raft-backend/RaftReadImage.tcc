@@ -11,7 +11,7 @@ using namespace std::chrono;
 template <typename T>
 RaftReadImage<T>::RaftReadImage(fitsfile *fptr) : raft::kernel()
 {
-
+    input.addPort<std::vector<long long>>("range");
     status = 0;
     this->fptr = fptr;
 
@@ -35,6 +35,33 @@ RaftReadImage<T>::RaftReadImage(fitsfile *fptr) : raft::kernel()
     output.addPort<T>("total");
 }
 
+template <typename T>
+RaftReadImage<T>::RaftReadImage(const RaftReadImage &other) : raft::kernel()
+{
+    input.addPort<std::vector<long long>>("range");
+    status = 0;
+    this->fptr = other.fptr;
+
+    //Getting the image parameters - naxis, naxes and bitpixs
+    fits_get_img_paramll(this->fptr, 3, &bitpix, &naxis, naxes, &status);
+
+    //Allocating a memory for a row
+    //pixels = (float *)malloc(naxes[0] * sizeof(float));
+    pixels = new float[naxes[0]];
+
+    if (pixels == NULL)
+    {
+        printf("Memory allocation error\n");
+    }
+
+    //set no of non-nan pixels to 0
+    totPixels = other.totPixels;
+    std::cout << naxes[0] << " " << naxes[1] << " " << naxes[2] << std::endl;
+
+    //Declaring one output port called total.
+    output.addPort<T>("total");
+}
+
 /*
     Method to access ports and do work
     This method will specifically read a fits file
@@ -44,11 +71,15 @@ RaftReadImage<T>::RaftReadImage(fitsfile *fptr) : raft::kernel()
 template <typename T>
 raft::kstatus RaftReadImage<T>::run()
 {
+    auto &t(input["range"].template peek<std::vector<long long>>());
+    std::cout<<t[0]<<" "<<t[1]<<std::endl;
+    input["range"].unpeek();
+
     //Loop through depth
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
     {
         //Loop through rows
-        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
+        for (fpixel[1] = t[1]; fpixel[1] >= t[0]; fpixel[1]--)
         {
             //Timing the reading using cfitsio for testing
             auto start = high_resolution_clock::now();

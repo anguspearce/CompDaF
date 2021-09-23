@@ -37,6 +37,9 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
 
     // Kernel to read a fits file
+    using readrowrange = RaftReadingRow<long>;
+
+    // Kernel to read a fits file
     using readimage = RaftReadImage<type_v>;
 
     //Kernel to send a number of vector through to the next kernel
@@ -51,8 +54,9 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     //Initialising using the constructors
     //NUM_THREADS is the number of input and output ports
     //Duplicates the middle kernel as required
+    readrowrange rr(this->height,NUM_THREADS);
     readimage ri(fptr);
-    splitvec sp(NUM_THREADS);
+    splitvec sp(NUM_THREADS,NUM_THREADS);
     raftstats av(max, min);
     sum s(NUM_THREADS);
 
@@ -61,7 +65,7 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
 
     //kernel ri has a single output and sp has a single
     //input port
-    m += ri >> sp;
+    m += rr <= ri >= sp;
 
     //sp could have multiple output ports depending on 
     //NUM_THREADS, av will be duplicated NUM_THREADS times
@@ -101,6 +105,9 @@ void Raftlib<T>::CalculateHistogram(fitsfile *fptr)
     using type_a = std::vector<std::pair<type_v, raft::signal>>;
     
     // Kernel to read a fits file
+    using readrowrange = RaftReadingRow<long>;
+
+    // Kernel to read a fits file
     using readimage = RaftReadImage<type_v>;
 
     //Kernel to send a number of vector through to the next kernel
@@ -115,8 +122,9 @@ void Raftlib<T>::CalculateHistogram(fitsfile *fptr)
     //Initialising using the constructors
     //NUM_THREADS is the number of input and output ports
     //Duplicates the middle kernel as required
+    readrowrange rr(this->height,NUM_THREADS);
     readimage ri(fptr);
-    splitvec sp(NUM_THREADS);
+    splitvec sp(NUM_THREADS,NUM_THREADS);
     rafthisto sv(getMean(), this->min, this->binWidth, this->noOfBins);
     mergebins mb(bins, NUM_THREADS);
 
@@ -125,7 +133,7 @@ void Raftlib<T>::CalculateHistogram(fitsfile *fptr)
 
     //kernel ri has a single output and sp has a single
     //input port
-    m += ri >> sp;
+    m += rr <= ri >= sp;
 
     //sp could have multiple output ports depending on 
     //NUM_THREADS, sv will be duplicated NUM_THREADS times

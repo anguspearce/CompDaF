@@ -9,6 +9,7 @@
 #include "Sum.h"
 #include "MergeBins.h"
 #include "RaftReadImage.h"
+#include "RaftReadingRow.h"
 
 #include <raft>
 #include <chrono>

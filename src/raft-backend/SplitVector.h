@@ -12,10 +12,10 @@ template <typename T>
 class SplitVector : public raft::parallel_k
 {
 public:
-    SplitVector(const std::size_t n_output_ports = 1);
+    SplitVector(const std::size_t n_output_ports = 1,const std::size_t n_input_ports = 1);
 
     virtual raft::kstatus run();
-
+    std::size_t input_ports=1;
 private:
     const int NUM_VECTORS = 1;
 };

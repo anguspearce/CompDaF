@@ -7,9 +7,15 @@
     in the raftlib class
 */
 template <typename T>
-SplitVector<T>::SplitVector(const std::size_t n_output_ports) : raft::parallel_k()
+SplitVector<T>::SplitVector(const std::size_t n_output_ports, const std::size_t n_input_ports) : raft::parallel_k()
 {
-    input.addPort<T>("a");
+    //input.addPort<T>("a");
+    //creating no of inputs
+    this->input_ports=n_input_ports;
+    for (auto i(0); i < n_input_ports; i++)
+    {
+        input.addPort<T>("in"+std::to_string(i));
+    }
     for (auto i(0); i < n_output_ports; i++)
     {
         output.addPort<std::vector<std::pair<T, raft::signal>>>(std::to_string(i));
@@ -29,12 +35,14 @@ raft::kstatus SplitVector<T>::run()
     std::vector<std::pair<T, raft::signal>> &t = r;
 
     //Looping through the multiple outputs
+    long count=0;
     for (auto &port : output)
     {
-        if (input["a"].size() > 0)
+        count+=1;
+        if (input["in"+std::to_string(count%input_ports)].size() > 0)
         {
             //Pop a number of vectors into t
-            input["a"].template pop_range(t, NUM_VECTORS);
+            input["in"+std::to_string(count%input_ports)].template pop_range(t, NUM_VECTORS);
 
             //allocate_s returns an object of the allocated memory
             //which will be released to the downstream port. pushing the memory allocated
