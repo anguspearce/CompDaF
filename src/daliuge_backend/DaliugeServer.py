@@ -106,7 +106,7 @@ class DaliugeServer:
             return 0
         # Wait until the daliuge-engine has finished executing the graph
         while os.path.exists(self.outputPath) == False:
-            sleep(0.1)
+            sleep(1)
         
         try:
             # Load and unpickle the data from file

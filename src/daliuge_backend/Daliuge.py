@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # \file Daliuge.py
 ##
 # \brief SplitStatsApp\n
-# \details App that reads and splits a fits file into number of outputs.
+# \details App that splits a FITS file into a range based on number of outputs
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 #     \~English Application class\n
 # \param[in] param/fileName/dummy.fits/String
 #     \~English Path to FITS file
-# \param[out] port/list
+# \param[out] port/range
 #     \~English Port outputting the list containing respective splits
 # \par EAGLE_END
 class SplitStatsApp(BarrierAppDROP):
@@ -46,7 +46,7 @@ class SplitStatsApp(BarrierAppDROP):
                                     [dlg_batch_output('binary/*', [])],
                                     [dlg_streaming_input('binary/*')])
 
-    # fileName is relative to tmp/.dlg/code/ directory
+
 
     fileName = dlg_string_param('fileName','dummy.fits') # NOTE: The variable name has to match the value of the param name!
     fileDir = "../testdata/"
@@ -79,14 +79,14 @@ class SplitStatsApp(BarrierAppDROP):
 
 ##
 # \brief ComputeStatsApp\n
-# \details Array Statistics App that takes in a np array and calculates statistics on it.
+# \details App that computes various statistics over a section of data
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
 # \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.ComputeStatsApp/String
 #             \~English Application class\n
-# \param[in] port/list
+# \param[in] port/range
 #             \~English Port receiving respective split
 # \param[out] port/stats
 #             \~English Port outputs list of calculated statistics
@@ -112,7 +112,7 @@ class ComputeStatsApp(BarrierAppDROP):
         start = self.d[0]
         end = self.d[1]
         file = self.d[2]
-        width = math.ceil((end-start)/4)
+        width = math.ceil((end-start)/self.step)
 
         try:
             with fits.open(file, memmap=True) as hdu:
@@ -120,7 +120,7 @@ class ComputeStatsApp(BarrierAppDROP):
                     raise Exception("Unexpected format in fits file.")
                 temp = start + width
 
-                for i in range(4):
+                for i in range(self.step):
                     if temp > end:
                         temp = end
                     data = hdu[0].data[start:temp]
@@ -150,7 +150,7 @@ class ComputeStatsApp(BarrierAppDROP):
 
 ##
 # \brief GatherStatsApp\n
-# \details GatherStatsApp that receives list of results and compares/combines.
+# \details App that compares/combines statistics computed
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
@@ -159,7 +159,7 @@ class ComputeStatsApp(BarrierAppDROP):
 #     \~English Application class\n
 # \param[in] port/stats
 #     \~English Port receiving list of statistics to combine
-# \param[out] port/list
+# \param[out] port/minmax
 #     \~English Port outputting list of min, max, file
 # \param[out] port/statistics
 #     \~English Port outputting calculated statistics
@@ -231,16 +231,16 @@ class GatherStatsApp(BarrierAppDROP):
 
 ##
 # \brief SplitHistApp\n
-# \details App that splits data
+# \details App that splits a FITS file into sections based on number of outputs
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
 # \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.SplitHistApp/String
 #     \~English Application class\n
-# \param[in] port/list
+# \param[in] port/minmax
 #     \~English Port receiving list of min, max, file
-# \param[out] port/list
+# \param[out] port/range
 #     \~English Port outputting list to each respective split
 # \par EAGLE_END
 class SplitHistApp(BarrierAppDROP):
@@ -274,9 +274,9 @@ class SplitHistApp(BarrierAppDROP):
 
         for out in self.outputs:
             if (self.start + self.width) > self.s:
-                d = pickle.dumps([self.start, self.s, self.min, self.max, self.bins, self.binWidth, file, t])
+                d = pickle.dumps([self.start, self.s, self.min, self.bins, self.binWidth, file, t])
             else:
-                d = pickle.dumps([self.start, self.start + self.width, self.min, self.max, self.bins, self.binWidth, file, t])
+                d = pickle.dumps([self.start, self.start + self.width, self.min, self.bins, self.binWidth, file, t])
             out.len = len(d)
             out.write(d)
             self.start += self.width
@@ -285,14 +285,14 @@ class SplitHistApp(BarrierAppDROP):
 
 ##
 # \brief ComputeHistApp\n
-# \details Array Statistics App that takes in a np array and calculates statistics on it.
+# \details App that computes the histogram for a specific range of a FITS file 
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
 # \param category PythonApp
 # \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.ComputeHistApp/String
 #             \~English Application class\n
-# \param[in] port/list
+# \param[in] port/range
 #             \~English Port receiving list of respective split
 # \param[out] port/hist
 #             \~English Port outputs list of histogram, num bins
@@ -314,11 +314,10 @@ class ComputeHistApp(BarrierAppDROP):
         start = inp[0]
         end = inp[1]
         min = inp[2]
-        max = inp[3]
-        bins = inp[4]
-        binWidth = inp[5]
+        bins = inp[3]
+        binWidth = inp[4]
         width = math.ceil((end-start)/self.step)
-        file = inp[6]
+        file = inp[5]
 
         self.hist = np.zeros(bins, dtype=np.int32)
 
@@ -337,21 +336,15 @@ class ComputeHistApp(BarrierAppDROP):
                         self.getHisto(data.newbyteorder().byteswap(inplace=True), min, binWidth, self.hist)
                     else:
                         self.getHisto(data, min, binWidth, self.hist)
-                    # if self.hist is None:
-                    #     self.hist, b = np.histogram(data, bins, (min, max))
-                    # else:
-                    #     h, b = np.histogram(data, bins, (min, max))
-                    #     self.hist += h
                     
                     start = temp
-                    temp += width
-            
+                    temp += width 
         except:
             raise Exception("Unable to load file.")
 
         outs = self.outputs
 
-        d = pickle.dumps([self.hist, bins, inp[7]])
+        d = pickle.dumps([self.hist, bins, inp[6]])
         outs[0].len = len(d)
         outs[0].write(d)
     
@@ -369,7 +362,7 @@ class ComputeHistApp(BarrierAppDROP):
 
 ##
 # \brief GatherHistApp\n
-# \details GatherHistApp that receives list of results and compares/combines.
+# \details App that receives histograms from each compute node
 # \par EAGLE_START
 # \param gitrepo $(GIT_REPO)
 # \param version $(PROJECT_VERSION)
@@ -378,7 +371,7 @@ class ComputeHistApp(BarrierAppDROP):
 #     \~English Application class\n
 # \param[in] port/hist
 #     \~English Port receiving histograms to combine
-# \param[out] port/string
+# \param[out] port/histogram
 #     \~English Port outputting histogram and number of bins
 # \par EAGLE_END
 class GatherHistApp(BarrierAppDROP):
@@ -398,7 +391,7 @@ class GatherHistApp(BarrierAppDROP):
         
         for i in self.data:
             try:
-                self.hist += i[0]
+                self.hist = np.add(self.hist, i[0])
             except:
                 self.hist = i[0]
             
