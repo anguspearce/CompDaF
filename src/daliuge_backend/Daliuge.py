@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.8
 # Daliuge
 from dlg import droputils, utils
 from dlg.ddap_protocol import AppDROPStates
@@ -8,8 +9,8 @@ from dlg.meta import dlg_component, dlg_batch_input
 from dlg.meta import dlg_batch_output, dlg_streaming_input
 
 import pickle
+import numba as nb
 import numpy as np
-
 # Fits file reader
 from astropy.io import fits
 import os
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 # \param category PythonApp
 # \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.SplitStatsApp/String
 #     \~English Application class\n
-# \param[in] param/fileName/20000.fits/String
+# \param[in] param/fileName/dummy.fits/String
 #     \~English Path to FITS file
 # \param[out] port/list
 #     \~English Port outputting the list containing respective splits
@@ -46,12 +47,12 @@ class SplitStatsApp(BarrierAppDROP):
 
     # fileName is relative to tmp/.dlg/code/ directory
 
-    fileName = dlg_string_param('fileName','20000.fits') # NOTE: The variable name has to match the value of the param name!
+    fileName = dlg_string_param('fileName','dummy.fits') # NOTE: The variable name has to match the value of the param name!
     fileDir = "../testdata/"
 
     def initialize(self, **kwargs):
         super(SplitStatsApp, self).initialize(**kwargs)
-        self.file = os.path.normpath(self.fileDir + "sample.fits")
+        self.file = os.path.normpath(self.fileDir + "20000.fits")
         self.start = 0
 
     def run(self):
@@ -158,6 +159,8 @@ class ComputeStatsApp(BarrierAppDROP):
 #     \~English Port receiving list of statistics to combine
 # \param[out] port/list
 #     \~English Port outputting list of min, max, file
+# \param[out] port/statistics
+#     \~English Port outputting calculated statistics
 # \par EAGLE_END
 class GatherStatsApp(BarrierAppDROP):
     
@@ -192,19 +195,22 @@ class GatherStatsApp(BarrierAppDROP):
         t = time.perf_counter()
         timer = t - self.data[0][5]
 
-        stats = "Sum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
-        stats = stats.format(sum=self.sum, mean=mean, min=self.min, max=self.max, stddev=stddev, sumSq=self.sumSq, pixels=self.pixels, t=timer)
-
+        stats = "File: {file} \nSum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
+        stats = stats.format(file=self.data[0][6], sum=self.sum, mean=mean, min=self.min, max=self.max, stddev=stddev, sumSq=self.sumSq, pixels=self.pixels, t=timer)
+        stats = stats.encode()
         # Write the final output to a file
-        pickle.dump(stats, open("Statistics", "wb"))
-
+        # pickle.dump(stats, open("Statistics", "wb"))
 
         outs = self.outputs
-        if len(outs) != 1:
-            raise Exception("Only one output should have been added.")
+        if len(outs) != 2:
+            raise Exception("Only two outputs should have been added.")
+        
         d = pickle.dumps([self.min, self.max, self.data[0][6]])
         outs[0].len = len(d)
         outs[0].write(d)
+
+        outs[1].len = len(stats)
+        outs[1].write(stats)
         
     def getInputArrays(self):
         """""
@@ -259,15 +265,16 @@ class SplitHistApp(BarrierAppDROP):
                     raise Exception("Unexpected format in fits file.")
                 self.s = hdu[0].data.shape[0]
                 self.bins = int(max(2, math.sqrt(self.s * hdu[0].data.shape[1])))
-            self.width = math.ceil(self.s / len(self.outputs))    
+            self.width = math.ceil(self.s / len(self.outputs))
+            self.binWidth = (self.max - self.min)/self.bins
         except:
             raise Exception("Unable to load file.")
 
         for out in self.outputs:
             if (self.start + self.width) > self.s:
-                d = pickle.dumps([self.start, self.s, self.min, self.max, self.bins, file, t])
+                d = pickle.dumps([self.start, self.s, self.min, self.max, self.bins, self.binWidth, file, t])
             else:
-                d = pickle.dumps([self.start, self.start + self.width, self.min, self.max, self.bins, file, t])
+                d = pickle.dumps([self.start, self.start + self.width, self.min, self.max, self.bins, self.binWidth, file, t])
             out.len = len(d)
             out.write(d)
             self.start += self.width
@@ -298,6 +305,7 @@ class ComputeHistApp(BarrierAppDROP):
     def initialize(self, **kwargs):
         super(ComputeHistApp, self).initialize(**kwargs)
         self.hist = None
+        self.step = 4
 
     def run(self):
         inp = pickle.loads(droputils.allDropContents(self.inputs[0]))
@@ -306,8 +314,11 @@ class ComputeHistApp(BarrierAppDROP):
         min = inp[2]
         max = inp[3]
         bins = inp[4]
-        width = math.ceil((end-start)/4)
-        file = inp[5]
+        binWidth = inp[5]
+        width = math.ceil((end-start)/self.step)
+        file = inp[6]
+
+        self.hist = np.zeros(bins, dtype=np.int32)
 
         try:
             with fits.open(file, memmap=True) as hdu:
@@ -315,27 +326,38 @@ class ComputeHistApp(BarrierAppDROP):
                     raise Exception("Unexpected format in fits file.")
                 temp = start + width
 
-                for i in range(4):
+                for i in range(self.step):
                     if temp > end:
                         temp = end
-                    data = hdu[0].data[start:temp]
-                    
-                    if self.hist is None:
-                        self.hist, b = np.histogram(data, bins, (min, max))
-                    else:
-                        h, b = np.histogram(data, bins, (min, max))
-                        self.hist += h
+                    data = np.array(hdu[0].data[start:temp], dtype=np.float32)
+                    self.getHisto(data, min, binWidth, self.hist)
+                    # if self.hist is None:
+                    #     self.hist, b = np.histogram(data, bins, (min, max))
+                    # else:
+                    #     h, b = np.histogram(data, bins, (min, max))
+                    #     self.hist += h
                     
                     start = temp
                     temp += width
+            
         except:
             raise Exception("Unable to load file.")
 
         outs = self.outputs
 
-        d = pickle.dumps([self.hist, bins, inp[6]])
+        d = pickle.dumps([self.hist, bins, inp[7]])
         outs[0].len = len(d)
         outs[0].write(d)
+    
+    @staticmethod
+    @nb.njit(parallel=False, fastmath=True)
+    def getHisto(data, min, binWidth, hist):
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                scaledVal = (data[i,j] - min) / binWidth
+                index = math.floor(scaledVal)
+                hist[index] += 1
+        return hist
 
 
 
@@ -379,7 +401,9 @@ class GatherHistApp(BarrierAppDROP):
 
         stats = "Time taken: {t} \nNumber of bins: {bins} \nHistogram: {hist}"
         stats = stats.format(t=timer, bins=self.data[0][1], hist=self.hist)
-
+        # stats = [self.hist, self.data[0][1], timer]
+        # # Write the final output to a file
+        # pickle.dump(stats, open("Histogram", "wb"))
         self.outputs[0].len = len(str(stats).encode())
         self.outputs[0].write(str(stats).encode())
     
