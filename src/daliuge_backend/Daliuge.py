@@ -53,7 +53,7 @@ class SplitStatsApp(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(SplitStatsApp, self).initialize(**kwargs)
-        self.file = os.path.normpath(self.fileDir + "sample.fits")
+        self.file = os.path.normpath(self.fileDir + "30000.fits")
         self.start = 0
 
     def run(self):
@@ -134,6 +134,7 @@ class ComputeStatsApp(BarrierAppDROP):
                         self.min = mi
                     if ma > self.max:
                         self.max = ma
+
                     start = temp
                     temp += width
         except:
@@ -349,7 +350,7 @@ class ComputeHistApp(BarrierAppDROP):
         outs[0].write(d)
     
     @staticmethod
-    @nb.njit(parallel=False, fastmath=True)
+    @nb.njit(parallel=False, fastmath=True, nogil=True, cache=True)
     def getHisto(data, min, binWidth, hist):
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
