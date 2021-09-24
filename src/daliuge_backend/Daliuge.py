@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.8
 # Daliuge
+from sys import float_info
 from dlg import droputils, utils
 from dlg.ddap_protocol import AppDROPStates
 from dlg.drop import BarrierAppDROP, BranchAppDrop, ContainerDROP, AppDROP
@@ -52,7 +53,7 @@ class SplitStatsApp(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(SplitStatsApp, self).initialize(**kwargs)
-        self.file = os.path.normpath(self.fileDir + "20000.fits")
+        self.file = os.path.normpath(self.fileDir + "sample.fits")
         self.start = 0
 
     def run(self):
@@ -99,18 +100,19 @@ class ComputeStatsApp(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(ComputeStatsApp, self).initialize(**kwargs)
+        self.step = 4
         self.sum = 0
         self.sumSq = 0
         self.pixels = 0
-        self.min = 9999999
-        self.max = -9999999
+        self.min = float_info.max
+        self.max = float_info.min
 
     def run(self):
         self.d = pickle.loads(droputils.allDropContents(self.inputs[0]))
         start = self.d[0]
         end = self.d[1]
-        width = math.ceil((end-start)/4)
         file = self.d[2]
+        width = math.ceil((end-start)/4)
 
         try:
             with fits.open(file, memmap=True) as hdu:
@@ -329,8 +331,12 @@ class ComputeHistApp(BarrierAppDROP):
                 for i in range(self.step):
                     if temp > end:
                         temp = end
-                    data = np.array(hdu[0].data[start:temp], dtype=np.float32)
-                    self.getHisto(data, min, binWidth, self.hist)
+                    data = hdu[0].data[start:temp]
+                    
+                    if data.dtype.byteorder == '>':
+                        self.getHisto(data.newbyteorder().byteswap(inplace=True), min, binWidth, self.hist)
+                    else:
+                        self.getHisto(data, min, binWidth, self.hist)
                     # if self.hist is None:
                     #     self.hist, b = np.histogram(data, bins, (min, max))
                     # else:
