@@ -7,7 +7,7 @@ import traceback
 
 class GraphLoader():
     def __init__(self, sessionId, graphSpec) -> None:
-        self.port = 8000
+        self.port = 9000
         self.graphSpec = graphSpec
         self.graph = None
         self.firstDrop = None
