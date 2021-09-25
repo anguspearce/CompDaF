@@ -28,10 +28,12 @@ from daliuge_backend.GraphLoader import *
     and """
 class DaliugeServer:
 
-    def __init__(self, graphSpec, port):
+    def __init__(self, graphSpec, ramSplit, port):
         self.outputPath = os.path.normpath("../finalOutput.pickle")
         self.graphSpec = os.path.normpath("src/graphs/" + str(graphSpec))
-        self.dataDir = "../../testdata/"
+        self.dataDir = "../../../../data/ubuntu/"
+        #self.dataDir = "../../testdata/"
+        self.ramSplit = ramSplit
         self.data = None # Only initialise this with data once the graph has run
         
         # Checking if the graph specification file exists
@@ -63,7 +65,7 @@ class DaliugeServer:
         if(ack.success):
             print("Successfully connected with session:", self.sessionId)
             # Initialise GraphLoader class with clients session ID and the chosen graph file
-            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec)
+            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec, self.ramSplit)
         else:
             print("Failed to connect with session:", self.sessionId)
 

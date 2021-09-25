@@ -6,13 +6,14 @@ import json
 import traceback
 
 class GraphLoader():
-    def __init__(self, sessionId, graphSpec) -> None:
-        self.port = 9000
+    def __init__(self, sessionId, graphSpec, ramSplit) -> None:
+        self.port = 8001
         self.graphSpec = graphSpec
         self.graph = None
         self.firstDrop = None
         self.sessionId = str(sessionId)
         self.manager = NodeManagerClient(port = self.port)
+        self.ramSplit = ramSplit
     
     def createSession(self, file):
         # Read in the JSON Graph File
@@ -36,13 +37,14 @@ class GraphLoader():
         
         # Find the first Drop in the graph 
         for drop in self.graph:
-            if drop.get('rank') == [0]:
-                if drop.get('iid') == '0':
-                    self.firstDrop = drop.get('oid')
-                    drop["fileName"] = file
-                    break
+            if drop.get('nm') == 'SplitStatsApp':
+                self.firstDrop = drop.get('oid')
+                drop["fileName"] = file
+                drop["ramSplit"] = self.ramSplit
+                break
         # Ensure that the Drop was found
         if self.firstDrop == None:
+            print("Drop not found")
             return 0
         
         # Append graph

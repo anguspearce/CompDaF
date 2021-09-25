@@ -34,8 +34,10 @@ logger = logging.getLogger(__name__)
 # \param category PythonApp
 # \param[in] param/appclass/CompDaF.src.daliuge_backend.Daliuge.SplitStatsApp/String
 #     \~English Application class\n
-# \param[in] param/fileName/dummy.fits/String
+# \param[in] param/fileName/sample.fits/String
 #     \~English Path to FITS file
+# \param[in] param/ramSplit/4/Integer
+#     \~English Split of data to work on at a time
 # \param[out] port/range
 #     \~English Port outputting the list containing respective splits
 # \par EAGLE_END
@@ -47,13 +49,13 @@ class SplitStatsApp(BarrierAppDROP):
                                     [dlg_streaming_input('binary/*')])
 
 
-
-    fileName = dlg_string_param('fileName','dummy.fits') # NOTE: The variable name has to match the value of the param name!
+    ramSplit = dlg_int_param('ramSplit', 4)
+    fileName = dlg_string_param('fileName','sample.fits') # NOTE: The variable name has to match the value of the param name!
     fileDir = "../testdata/"
 
     def initialize(self, **kwargs):
         super(SplitStatsApp, self).initialize(**kwargs)
-        self.file = os.path.normpath(self.fileDir + "30000.fits")
+        self.file = os.path.normpath(self.fileDir + self.fileName)
         self.start = 0
 
     def run(self):
@@ -69,9 +71,9 @@ class SplitStatsApp(BarrierAppDROP):
 
         for out in self.outputs:
             if (self.start + self.width) > self.s:
-                d = pickle.dumps([self.start, self.s, self.file, t])
+                d = pickle.dumps([self.start, self.s, self.ramSplit, self.file, t])
             else:
-                d = pickle.dumps([self.start, self.start + self.width, self.file, t])
+                d = pickle.dumps([self.start, self.start + self.width, self.ramSplit, self.file, t])
             out.len = len(d)
             out.write(d)
             self.start += self.width
@@ -100,7 +102,6 @@ class ComputeStatsApp(BarrierAppDROP):
 
     def initialize(self, **kwargs):
         super(ComputeStatsApp, self).initialize(**kwargs)
-        self.step = 4
         self.sum = 0
         self.sumSq = 0
         self.pixels = 0
@@ -111,8 +112,9 @@ class ComputeStatsApp(BarrierAppDROP):
         self.d = pickle.loads(droputils.allDropContents(self.inputs[0]))
         start = self.d[0]
         end = self.d[1]
-        file = self.d[2]
-        width = math.ceil((end-start)/self.step)
+        step = self.d[2]
+        file = self.d[3]
+        width = math.ceil((end-start)/step)
 
         try:
             with fits.open(file, memmap=True) as hdu:
@@ -120,7 +122,7 @@ class ComputeStatsApp(BarrierAppDROP):
                     raise Exception("Unexpected format in fits file.")
                 temp = start + width
 
-                for i in range(self.step):
+                for i in range(step):
                     if temp > end:
                         temp = end
                     data = hdu[0].data[start:temp]
@@ -140,7 +142,7 @@ class ComputeStatsApp(BarrierAppDROP):
         except:
             raise Exception("Unable to load file.")
 
-        stats = [self.sum, self.sumSq, self.pixels, self.min, self.max, self.d[3], file]
+        stats = [self.sum, self.sumSq, self.pixels, self.min, self.max, self.d[4], file, step]
         stats = pickle.dumps(stats)
 
         outs = self.outputs
@@ -208,7 +210,7 @@ class GatherStatsApp(BarrierAppDROP):
         if len(outs) != 2:
             raise Exception("Only two outputs should have been added.")
         
-        d = pickle.dumps([self.min, self.max, self.data[0][6]])
+        d = pickle.dumps([self.min, self.max, self.data[0][6], self.data[0][7]])
         outs[0].len = len(d)
         outs[0].write(d)
 
@@ -275,9 +277,9 @@ class SplitHistApp(BarrierAppDROP):
 
         for out in self.outputs:
             if (self.start + self.width) > self.s:
-                d = pickle.dumps([self.start, self.s, self.min, self.bins, self.binWidth, file, t])
+                d = pickle.dumps([self.start, self.s, self.min, self.bins, self.binWidth, file, t, data[3]])
             else:
-                d = pickle.dumps([self.start, self.start + self.width, self.min, self.bins, self.binWidth, file, t])
+                d = pickle.dumps([self.start, self.start + self.width, self.min, self.bins, self.binWidth, file, t, data[3]])
             out.len = len(d)
             out.write(d)
             self.start += self.width
@@ -308,7 +310,6 @@ class ComputeHistApp(BarrierAppDROP):
     def initialize(self, **kwargs):
         super(ComputeHistApp, self).initialize(**kwargs)
         self.hist = None
-        self.step = 4
 
     def run(self):
         inp = pickle.loads(droputils.allDropContents(self.inputs[0]))
@@ -317,8 +318,9 @@ class ComputeHistApp(BarrierAppDROP):
         min = inp[2]
         bins = inp[3]
         binWidth = inp[4]
-        width = math.ceil((end-start)/self.step)
         file = inp[5]
+        step = inp[7]
+        width = math.ceil((end-start)/step)
 
         self.hist = np.zeros(bins, dtype=np.int32)
 
@@ -328,7 +330,7 @@ class ComputeHistApp(BarrierAppDROP):
                     raise Exception("Unexpected format in fits file.")
                 temp = start + width
 
-                for i in range(self.step):
+                for i in range(step):
                     if temp > end:
                         temp = end
                     data = hdu[0].data[start:temp]
@@ -399,8 +401,8 @@ class GatherHistApp(BarrierAppDROP):
         t = time.perf_counter()
         timer = t - self.data[0][2]
 
-        stats = "Time taken: {t} \nNumber of bins: {bins} \nHistogram: {hist}"
-        stats = stats.format(t=timer, bins=self.data[0][1], hist=self.hist)
+        stats = "Histogram: {hist} \nNumber of bins: {bins} \nTime taken: {t}"
+        stats = stats.format(hist=self.hist, bins=self.data[0][1], t=timer)
         # stats = [self.hist, self.data[0][1], timer]
         # # Write the final output to a file
         # pickle.dump(stats, open("Histogram", "wb"))
