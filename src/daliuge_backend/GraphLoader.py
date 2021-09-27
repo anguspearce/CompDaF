@@ -59,7 +59,7 @@ class GraphLoader():
         # Deploy session using sessionId and a list of Drop ID's that will be executed first
         try:
             self.manager.deploySession(self.sessionId, [self.firstDrop]) 
-            print("Successfully deployed session ", self.sessionId)
+            print("Successfully deployed session", self.sessionId)
         except:
             print("Failed to deploy session", self.sessionId)
             return 0

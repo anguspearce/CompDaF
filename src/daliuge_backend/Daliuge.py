@@ -48,10 +48,10 @@ class SplitStatsApp(BarrierAppDROP):
                                     [dlg_batch_output('binary/*', [])],
                                     [dlg_streaming_input('binary/*')])
 
-
-    ramSplit = dlg_int_param('ramSplit', 4)
+    # ramSplit is the number of splits each AppDROP will divide its range of data by
+    ramSplit = dlg_int_param('ramSplit', 4) # NOTE: The variable name has to match the value of the param name!
     fileName = dlg_string_param('fileName','sample.fits') # NOTE: The variable name has to match the value of the param name!
-    fileDir = "../testdata/"
+    fileDir = "../testdata/" 
 
     def initialize(self, **kwargs):
         super(SplitStatsApp, self).initialize(**kwargs)
@@ -123,8 +123,10 @@ class ComputeStatsApp(BarrierAppDROP):
                 temp = start + width
 
                 for i in range(step):
+                    # Ensure we don't overflow the range 
                     if temp > end:
                         temp = end
+
                     data = hdu[0].data[start:temp]
 
                     self.sum += np.nansum(data, dtype=np.float64)
@@ -178,8 +180,8 @@ class GatherStatsApp(BarrierAppDROP):
         super(GatherStatsApp, self).initialize(**kwargs)
         self.sum = 0
         self.sumSq = 0
-        self.min = 9999999
-        self.max = -9999999
+        self.min = float_info.max
+        self.max = float_info.min
         self.pixels = 0
 
     def run(self):
@@ -203,8 +205,10 @@ class GatherStatsApp(BarrierAppDROP):
         stats = "File: {file} \nSum: {sum} \nMean: {mean} \nMin: {min} \nMax: {max} \nStandard deviation: {stddev} \nSumSq: {sumSq} \nPixels: {pixels} \nTime taken: {t}"
         stats = stats.format(file=self.data[0][6], sum=self.sum, mean=mean, min=self.min, max=self.max, stddev=stddev, sumSq=self.sumSq, pixels=self.pixels, t=timer)
         stats = stats.encode()
+
+        dump = {"sum" : self.sum, "sumSq" : self.sumSq, "mean" : mean, "min" : self.min, "max" : self.max, "stddev" : stddev, "pixels" : self.pixels}
         # Write the final output to a file
-        # pickle.dump(stats, open("Statistics", "wb"))
+        pickle.dump(dump, open("Statistics", "wb"))
 
         outs = self.outputs
         if len(outs) != 2:
@@ -347,7 +351,7 @@ class ComputeHistApp(BarrierAppDROP):
 
         outs = self.outputs
 
-        d = pickle.dumps([self.hist, bins, inp[6]])
+        d = pickle.dumps([self.hist, bins, binWidth, inp[6]])
         outs[0].len = len(d)
         outs[0].write(d)
     
@@ -389,32 +393,38 @@ class GatherHistApp(BarrierAppDROP):
         self.hist = None
 
     def run(self):
-        # Set self.data to list of data from inputs
+        # Set self.data to list of data from inputs [histogram, numBins, startTime]
         self.getInputArrays()
         
+        # Combine all the histograms that were gathered into one
         for i in self.data:
             try:
                 self.hist = np.add(self.hist, i[0])
             except:
                 self.hist = i[0]
-            
+        
+        # Stopping the histogram timer
         t = time.perf_counter()
-        timer = t - self.data[0][2]
+        timer = t - self.data[0][3] # Any input ports 3rd index will have the same time
 
+
+        # Combining and pickling the data to a file
+        dump = {"hist" : self.hist, "numBins" : self.data[0][1], "binWidth" : self.data[0][2]}
+        pickle.dump(dump, open("Histogram", "wb"))
+
+        # Formatting results into a string (human-readable)
         stats = "Histogram: {hist} \nNumber of bins: {bins} \nTime taken: {t}"
-        stats = stats.format(hist=self.hist, bins=self.data[0][1], t=timer)
-        # stats = [self.hist, self.data[0][1], timer]
-        # # Write the final output to a file
-        # pickle.dump(stats, open("Histogram", "wb"))
-        self.outputs[0].len = len(str(stats).encode())
-        self.outputs[0].write(str(stats).encode())
+        stats = stats.format(hist=self.hist, bins=self.data[0][1], binWidth = self.data[0][2], t=timer)
+        # Sending the string output to the output port
+        self.outputs[0].len = len(stats.encode())
+        self.outputs[0].write(stats.encode())
     
     def getInputArrays(self):
         """""
         Create the input array from all inputs received. Shape is
         (<#inputs>, <#elements>), where #elements is the length of the
         vector received from one input. 
-        Format of embedded list: [sum, sumSq, pixels, hist, min, max, bins, startTime]
+        Format of embedded list: [histogram, numBins, startTime]
         """""
         ins = self.inputs
         if len(ins) < 1:
