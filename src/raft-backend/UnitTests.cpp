@@ -8,8 +8,11 @@
 
 std::string fName = "../sample.fits";
 FitsReader fitsFile = FitsReader(fName,5);
-bool errMargin(float a, float b)
+bool errMargin(float aa, float bb)
 {
+  float a = abs(aa);
+  float b = abs(bb);
+
   if (((b <= (a + (a * 0.00001))) && (b >= a - (a * 0.00001))) || (a == b))
   {
     return true;
@@ -205,6 +208,73 @@ TEST(StatisticsTest, fakefits)
   EXPECT_PRED2(errMargin, -5.830495834351e+0, regionStatsData.statistics()[4].value());
   EXPECT_PRED2(errMargin, 5.865360736847e+0, regionStatsData.statistics()[5].value());
 }
+
+FitsReader fiftythousand = FitsReader("../50000.fits",5);
+TEST(DimensionsTest, fiftythousandfile)
+{
+  std::vector<std::string> hdu_list;
+
+  int64_t fSize;
+  int naxis, width, height, depth;
+  long naxes[3] = {1, 1, 1};
+
+  std::string messageOut;
+  std::vector<CARTA::HeaderEntry> headerEntries;
+
+  //Getting file_info
+  fiftythousand.FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
+  EXPECT_PRED2(errMargin, 10000005120, fSize);
+  EXPECT_EQ(50000, naxes[0]);
+  EXPECT_EQ(50000, naxes[1]);
+  EXPECT_EQ(1, naxes[2]);
+}
+
+TEST(HistogramTest, fiftythousandfile)
+{
+  fiftythousand.readImagePixels();
+  CARTA::RegionHistogramData &regionHistogramData = fiftythousand.getRegionHistoData();
+  EXPECT_EQ(50000, regionHistogramData.histograms()[0].num_bins());
+  EXPECT_PRED2(errMargin, 0.00025747803738340735, regionHistogramData.histograms()[0].bin_width());
+  EXPECT_PRED2(errMargin, -6.307839393615723, regionHistogramData.histograms()[0].first_bin_center());
+  EXPECT_PRED2(errMargin, -0.000022075224851386633, regionHistogramData.histograms()[0].mean());
+  EXPECT_PRED2(errMargin, 1.0000075883444322, regionHistogramData.histograms()[0].std_dev());
+  //EXPECT_PRED2(errMargin,1.352704772949e+2, regionHistogramData.histograms()[0].value());
+  std::string fileName="../SampleOutputFiles/50000.txt";
+  std::ifstream in(fileName.c_str());
+  if(!in)
+    {
+        std::cerr << "Cannot open the File : "<<fileName<<std::endl;
+        
+    }
+  std::vector<int> b;
+  std::string str;
+    while (std::getline(in, str))
+    {
+        if(str.size() > 0)
+            b.push_back(stoi(str));
+    }
+    //Close The File
+    in.close();
+   
+  ASSERT_EQ(b.size(), regionHistogramData.histograms()[0].bins().size()) << "Vectors x and y are of unequal length";
+  //std::vector<int> histobinsout=regionHistogramData.histograms()[0].bins();
+  for (int i = 0; i < regionHistogramData.histograms()[0].bins().size(); ++i)
+  {
+    EXPECT_EQ(b[i], regionHistogramData.histograms()[0].bins()[i]) << "Vectors x and y differ at index " << i;
+  }
+}
+
+TEST(StatisticsTest, fiftythousandfile)
+{
+  CARTA::RegionStatsData &regionStatsData = fiftythousand.getRegionStatsData();
+  EXPECT_PRED2(errMargin, 2.500000000000e+9, regionStatsData.statistics()[0].value());
+  EXPECT_PRED2(errMargin, -5.518806212847e+4, regionStatsData.statistics()[1].value());
+  EXPECT_PRED2(errMargin,-2.207522485139e-5, regionStatsData.statistics()[2].value());
+  EXPECT_PRED2(errMargin, 1.000007588340e+0, regionStatsData.statistics()[3].value());
+  EXPECT_PRED2(errMargin, -6.307968139648e+0, regionStatsData.statistics()[4].value());
+  EXPECT_PRED2(errMargin, 6.565933704376e+0, regionStatsData.statistics()[5].value());
+}
+
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
