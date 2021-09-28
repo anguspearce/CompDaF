@@ -5,7 +5,7 @@ from time import sleep
 import pickle
 import websockets
 import os
-
+import logging
 
 # Protocol buffers
 from protobufs.python import defs_pb2
@@ -24,28 +24,26 @@ from astropy.io import fits
 from daliuge_backend.GraphLoader import *
 
 
-""" A server class that uses websockets to accept an incoming connection
-    and """
+""" A server class that uses websockets to accept an incoming connection """
 class DaliugeServer:
 
-    def __init__(self, graphSpec):
-        self.outputPath = os.path.normpath("../finalOutput.pickle")
-        self.graphSpec = os.path.normpath("src/graphs/" + str(graphSpec))
-        self.dataDir = "../../testdata/"
-        self.data = None # Only initialise this with data once the graph has run
+    def __init__(self, graphSpec, ramSplit, port):
+        self.graphSpec = os.path.normpath("src/graphs/" + str(graphSpec)) # Path to the graph file
+        self.statsPath = os.path.normpath("../../workspace/Statistics") # Path to the Statistics output file
+        self.histPath = os.path.normpath("../../workspace/Histogram") # Path to the Statistics output file
+        self.dataDir = "../../testdata/" # Directory where to look for the specified FITS file
+        self.ramSplit = ramSplit # Split of data to be in memory at a given time (excluding memmapping)
+        self.stats = None
+        self.hist = None
         
         # Checking if the graph specification file exists
         if not os.path.exists(self.graphSpec):
             raise FileNotFoundError("Graph specification not found.")
 
-        # If a previous output exists, delete it 
-        if os.path.exists(self.outputPath):
-            os.remove(self.outputPath)
-
         # Attempt to start to the server
         try:
             print("Waiting for connection.")
-            self.start_server = websockets.serve(self.host, "localhost", 9006, ping_interval = None)
+            self.start_server = websockets.serve(self.host, "localhost", port, ping_interval = None)
             asyncio.get_event_loop().run_until_complete(self.start_server)
             asyncio.get_event_loop().run_forever()
         except Exception as e:
@@ -63,7 +61,7 @@ class DaliugeServer:
         if(ack.success):
             print("Successfully connected with session:", self.sessionId)
             # Initialise GraphLoader class with clients session ID and the chosen graph file
-            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec)
+            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec, self.ramSplit)
         else:
             print("Failed to connect with session:", self.sessionId)
 
@@ -97,24 +95,36 @@ class DaliugeServer:
             await self.receiver(websocket, message)
 
 
-
     def executeGraph(self, file):
+        """ 
+        Method to handle the execution of the graph using the GraphLoader file
+        Also checks if the output files exist before executing a new session
+        """
+        # If a previous output file exists, delete it 
+        if os.path.exists(self.statsPath):
+            os.remove(self.statsPath)
+        if os.path.exists(self.histPath):
+            os.remove(self.histPath)
+
         # Begin the execution of the session graph
         result = self.graphLoader.createSession(file)
+
         # If graphLoader fails in any way, return code 0 
         if result == 0:
             return 0
         # Wait until the daliuge-engine has finished executing the graph
-        while os.path.exists(self.outputPath) == False:
-            sleep(0.1)
+        while (os.path.exists(self.statsPath) == False) or (os.path.exists(self.histPath) == False):
+            sleep(1)
         
         try:
             # Load and unpickle the data from file
-            with open(self.outputPath, "rb") as pkl:
-                self.data = pickle.load(pkl)
-            print(self.data)
+            with open(self.statsPath, "rb") as pkl:
+                self.stats = pickle.load(pkl)
+            with open(self.histPath, "rb") as pkl:
+                self.hist = pickle.load(pkl)
             return 1
         except:
+            print("Failed to open one or more output files.")
             return 0
 
 
@@ -156,9 +166,12 @@ class DaliugeServer:
 
         # Send protocol buffer ack
         await ws.send(add_message_header(ack, ack_type))
-        histo, histo_type = construct_region_histogram_data(
-                self.data.get("bins"), self.data.get("hist"), self.data.get("mean"), self.data.get("stddev"))
-        await ws.send(add_message_header(histo, histo_type))
+
+        # If the full on_open_file was a success, send the histogram immediately
+        if ack.success:
+            histo, histo_type = construct_region_histogram_data(
+                    self.hist.get("numBins"), self.hist.get("hist"), self.hist.get("binWidth"), self.stats.get("mean"), self.stats.get("stddev"))
+            await ws.send(add_message_header(histo, histo_type))
 
     async def on_set_histogram_requirements(self, ws, msg):
         """Handle the SET_HISTOGRAM_REQUIREMENTS message.
@@ -169,13 +182,8 @@ class DaliugeServer:
         """
         logging.info("\t[Server]\tGot SET_HISTOGRAM_REQUIREMENTS.")
         try:
-            histo_num_bins = msg.histograms[0].num_bins if msg.histograms[0].num_bins > 0 else None
-            raw_histogram = self.image.get_region_histogram(
-                bins=histo_num_bins)
-            mean = self.image.get_mean()
-            std_dev = self.image.get_std_dev()
             histo, histo_type = construct_region_histogram_data(
-                histo_num_bins, raw_histogram, mean, std_dev)
+                    self.hist.get("numBins"), self.hist.get("hist"), self.hist.get("binWidth"), self.stats.get("mean"), self.stats.get("stddev"))
             await ws.send(add_message_header(histo, histo_type))
             logging.info("\t[Server]\tSent REGION_HISTOGRAM_DATA.")
         except:
@@ -189,15 +197,15 @@ class DaliugeServer:
         :param msg: the client message recieved
 
         """
-        # logging.info("\t[Server]\tGot SET_STATS_REQUIREMENTS.")
-        # try:
-        #     raw_stats = self.image.get_region_statistics()
-        #     stats, stats_type = construct_region_stats_data(raw_stats)
-        #     await ws.send(add_message_header(stats, stats_type))
-        #     logging.info("\t[Server]\tSent REGION_STATS_DATA.")
-        # except:
-        #     logging.error("\t[Server]\tUnable to compute region statistics")
-        #     traceback.print_exc()
+        logging.info("\t[Server]\tGot SET_STATS_REQUIREMENTS.")
+        try:
+            stats, stats_type = construct_region_stats_data(
+                [self.stats.get("sum"), self.stats.get("mean"), self.stats.get("stddev"),self.stats.get("min"),self.stats.get("max")])
+            await ws.send(add_message_header(stats, stats_type))
+            logging.info("\t[Server]\tSent REGION_STATS_DATA.")
+        except:
+            logging.error("\t[Server]\tUnable to compute region statistics")
+            traceback.print_exc()
     
 #    Author: Dylan Fouche
 #    Date: 09/08/2021
