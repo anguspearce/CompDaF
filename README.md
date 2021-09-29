@@ -6,6 +6,8 @@
 ## Build submodules
 ```git submodule update --init --recursive ```
 
+# C++ raft-backend
+
 ## External Dependencies
 The C++ raft-backend depends on the following libraries:
 * [Raftlib] (https://github.com/RaftLib/RaftLib); Follow the build instructions, then copy the raftlib.pc folder from the build folder into /usr/lib/x86_64-linux-gnu/pkgconfig
@@ -26,14 +28,22 @@ To compile in release mode you can run the command:
 ``` cmake .. -DCMAKE_BUILD_TYPE=release ``` <br /> 
 ``` make ``` 
 
+## Run Server
+To run the raft-backend server, from the build folder:
+
+``` ./raftlib-server PORT NUM_THREADS``` <br />
+Example:
+``` ./raftlib-server 9001 5```
+Will run the server on port 9001 and raftlib will use 5 output ports.
+
+# Daliuge Backend
 ## Starting a server
 You can only run one server at a time for now.<br />
 ```cd ..``` into the main directory. <br /><br />
-Either the RaftLib backend:<br />
-``` ./build/raftlib-server ``` <br />
 Or the DALiuGE backend:<br />
 ``` ./src/mainServer.py ``` 
 
+# Frontend
 ## Frontend Dependencies
 pip3 install:
 * numpy
