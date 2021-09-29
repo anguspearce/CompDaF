@@ -53,7 +53,7 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     //Duplicates the middle kernel as required
     readimage ri(fptr);
     splitvec sp(NUM_THREADS);
-    raftstats av(max, min);
+    raftstats av;
     sum s(NUM_THREADS);
 
     //Map object will be used to link compute kernels
@@ -85,6 +85,8 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     this->sumTotal += s.total;
     this->sumsquares += s.sumSquaresTotal;
     this->noOfPixels=ri.totPixels;
+    this->min=s.min;
+    this->max=s.max;
 }
 
 /*

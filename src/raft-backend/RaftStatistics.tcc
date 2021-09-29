@@ -6,9 +6,10 @@
     Will act as a sequetial kernel
 */
 template <typename T, typename F>
-RaftStatistics<T, F>::RaftStatistics(F &max, F &min) : raft::kernel(), min(min), max(max)
+RaftStatistics<T, F>::RaftStatistics() : raft::kernel()
 {
-
+    min = INT_MAX;
+    max = INT_MIN;
     input.addPort<T>("addvec");
     output.addPort<std::vector<F>>("total");
 }
@@ -18,9 +19,10 @@ RaftStatistics<T, F>::RaftStatistics(F &max, F &min) : raft::kernel(), min(min),
     ports for previous kernel
 */
 template <typename T, typename F>
-RaftStatistics<T, F>::RaftStatistics(const RaftStatistics &other) : raft::kernel(), min(other.min), max(other.max)
+RaftStatistics<T, F>::RaftStatistics(const RaftStatistics &other) : raft::kernel()
 {
-
+    min = INT_MAX;
+    max = INT_MIN;
     input.addPort<T>("addvec");
     output.addPort<std::vector<F>>("total");
 }
@@ -37,7 +39,7 @@ raft::kstatus RaftStatistics<T, F>::run()
     auto &t(input["addvec"].template peek<T>());
 
     //vector to hold the sum and sumsquare which is passed to the next kernel
-    std::vector<F> totals = {0, 0};
+    std::vector<F> totals = {0, 0, 0, 0};
 
     //loop through NUM_VECTORS
     for (int i = 0; i < t.size(); i++)
@@ -62,7 +64,9 @@ raft::kstatus RaftStatistics<T, F>::run()
             totals[1] += (t[i].first[j] * t[i].first[j]);
         }
     }
-
+    //adding the min and max values to downstreamed vector
+    totals[2] = min;
+    totals[3] = max;
     //tells runtime that the refeence is no longer being used
     input["addvec"].unpeek();
 
@@ -75,7 +79,7 @@ raft::kstatus RaftStatistics<T, F>::run()
     //totally safe - multiple purposes
     input["addvec"].recycle(1);
 
-    //see previous kernel comments  
+    //see previous kernel comments
     return (raft::proceed);
 }
 

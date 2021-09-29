@@ -11,9 +11,10 @@ template <typename T, typename F>
 class RaftStatistics : public raft::kernel
 {
 public:
-    F &max;
-    F &min;
-    RaftStatistics(F &max, F &min);
+
+    F min;
+    F max;
+    RaftStatistics();
     RaftStatistics(const RaftStatistics &other);
     virtual raft::kstatus run();
     CLONE();

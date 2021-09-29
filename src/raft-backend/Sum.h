@@ -17,6 +17,8 @@ class Sum : public raft::parallel_k
 public:
     T total;
     T sumSquaresTotal;
+    T min;
+    T max;
     Sum(const std::size_t n_input_ports = 1);
 
     virtual raft::kstatus run();

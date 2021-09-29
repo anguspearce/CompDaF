@@ -12,7 +12,8 @@ Sum<T>::Sum(const std::size_t n_input_ports) : raft::parallel_k()
     //will store the sum and sum square total
     this->total = 0;
     this->sumSquaresTotal = 0;
-
+    this->min = INT_MAX;
+    this->max = INT_MIN;
     //creating no of inputs
     for (auto i(0); i < n_input_ports; i++)
     {
@@ -38,6 +39,19 @@ raft::kstatus Sum<T>::run()
             auto &a(port.template peek<std::vector<T>>());
             total += a[0];
             sumSquaresTotal+=a[1];
+
+            //min
+            if (a[2] < min)
+            {
+                min = a[2];
+            }
+
+            //max
+            if (a[3] > max)
+            {
+                max = a[3];
+            }
+
             port.unpeek();
             port.recycle();
         }
