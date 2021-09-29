@@ -52,5 +52,7 @@ pip3 install:
 * protobuf
 
 ## Run client
-``` ./src/main.py ```
+``` ./src/runClient.py PORT```
+Example:
+``` ./src/runClient.py 9001 ```
 
