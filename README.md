@@ -42,9 +42,18 @@ You can only run one server at a time for now.<br />
 ```cd ..``` into the main directory. <br /><br />
 Run <br />
 ``` python3 src/runDaliugeServer.py GRAPH SPLIT PORT``` <br />
-Argument are as follows: "graph file" "number of inside splits" "port number"
+Argument are as follows: "graph file" "number of inside splits" "port number" <br />
 Example:
 ``` python3 src/runDaliugeServer.py testGraph.graph 4 9001 ```
+## Dependencies
+pip3 install:
+* astropy
+* numba
+* numpy
+* dlg
+<br />
+The DALiuGE engine must be running in a Docker container. Instruction for installation of DALiuGE can be found here:<br />
+```https://github.com/ICRAR/daliuge```
 
 # Frontend
 ## Frontend Dependencies
