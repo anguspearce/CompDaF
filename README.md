@@ -41,9 +41,9 @@ Will run the server on port 9001 and raftlib will use 5 output ports.
 You can only run one server at a time for now.<br />
 ```cd ..``` into the main directory. <br /><br />
 Run <br />
-``` python3 src/runDaliugeServer.py GRAPH SPLIT PORT``` <br />
-Argument are as follows: "graph file" "number of inside splits" "port number" <br />
-Example:
+``` python3 src/runDaliugeServer.py GRAPH SPLIT PORT``` <br /><br />
+Arguments are as follows: "graph file" "number of inside splits" "port number" <br />
+For example:
 ``` python3 src/runDaliugeServer.py testGraph.graph 4 9001 ```
 ## Dependencies
 pip3 install:
@@ -53,7 +53,7 @@ pip3 install:
 * dlg
 <br />
 The DALiuGE engine must be running in a Docker container. Instruction for installation of DALiuGE can be found here:<br />
-```https://github.com/ICRAR/daliuge```
+https://github.com/ICRAR/daliuge
 
 # Frontend
 ## Frontend Dependencies
