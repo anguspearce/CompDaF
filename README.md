@@ -40,19 +40,22 @@ Will run the server on port 9001 and raftlib will use 5 output ports.
 ## Starting a server
 You can only run one server at a time for now.<br />
 ```cd ..``` into the main directory. <br /><br />
-Or the DALiuGE backend:<br />
-``` ./src/mainServer.py ``` 
+Run <br />
+``` python3 src/runDaliugeServer.py GRAPH SPLIT PORT``` <br />
+Argument are as follows: "graph file" "number of inside splits" "port number"
+Example:
+``` python3 src/runDaliugeServer.py testGraph.graph 4 9001 ```
 
 # Frontend
 ## Frontend Dependencies
 pip3 install:
-* numpy
 * astropy
+* numpy
 * websockets
 * protobuf
 
 ## Run client
-``` ./src/runClient.py PORT```
+``` python3 src/runClient.py PORT```
 Example:
-``` ./src/runClient.py 9001 ```
+``` python3 src/runClient.py 9001 ```
 
