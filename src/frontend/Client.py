@@ -1,36 +1,34 @@
 #!/usr/bin/env python3
 
 import websockets
+from websockets.exceptions import ConnectionClosedError
 import asyncio
 
 # Protobuf imports
-import uuid
-
-from websockets.exceptions import ConnectionClosedError
-
-from protobufs.python import defs_pb2
 from protobufs.python import enums_pb2
-from protobufs.python import register_viewer_pb2
-from protobufs.python import file_info_pb2
 
 # Util
 from util.message_header import *
 from util.message_provider import *
 
-# Class that represents a client
-# Connects to a backend and gives options for the client to take.
-
 
 class Client:
-    # Init on object creation: Creates the url to connect the websocket to.
+    """ Client class that uses websockets and protocol buffers set up a consistent connection to a server """
     def __init__(self, port):
+        """
+        Creates the url to connect the websocket to on initialisation.
+        :param port: Port number to connect to on localhost
+        """
         self.url = "ws://localhost:" + str(port)
         self.file_open = False
         self.cube = False
 
-    # Attempts to connect to specified backend and tries to register with the server.
-    # Receives REGISTER_VIEWER_ACK and session creation success.
+
     def connectToServer(self):
+        """
+        Attempts to connect to specified backend and tries to register with the server.
+        Receives REGISTER_VIEWER_ACK and session creation success.
+        """
         async def connect(self):
             try:
                 self.websocket = await websockets.connect(self.url, ping_interval=None)
@@ -59,60 +57,62 @@ class Client:
 
         asyncio.get_event_loop().run_until_complete(connect(self))
 
-    # Runs the async producer_handler method
     def menu(self):
+        """
+        Runs the async producer_handler method
+        """
         asyncio.get_event_loop().run_until_complete(
             self.producer_handler(self.websocket, ""))
 
-    # Supplies user with options list and calls relevant handler methods.
+    
     async def producer(self):
-        try:
-            if self.file_open:
-                menu = "Choose an option:\n1. Region Histogram\n2. Region Statistics\n3. Back\n\nSelection: "
-                option = input(menu)
-                while(self.file_open):
-                    try: 
-                        if (option == "1"):
-                            message, type = construct_set_histogram_requirements()
-                            if(self.cube):
-                                message.region_id = -2
-                            return add_message_header(message, type)
-                        elif (option == "2"):
-                            message, type = construct_set_stats_requirements()
-                            return add_message_header(message, type)
-                        elif (option == "3"):
-                            self.file_open == False
-                            break
-                        else:
-                            print("\nThere seems to be an issue with your input. Please try again.\n")
-                        option = input(menu)
-                    except:
-                        print("\nThere seems to be an issue with your input. Please try again.\n")
-                        continue
-            
-            menu = "Choose an option:\n1. Open File\nq. Quit Application\n\nSelection: "
+        """ Supplies user with input options based on whether a file is open or not.
+        """
+        if self.file_open:
+            menu = "Choose an option:\n1. Region Histogram\n2. Region Statistics\n3. Back\n\nSelection: "
             option = input(menu)
-            try:
-                if (option == "1"):
-                    directory = input("Please enter the directory name: ")
-                    fileName = input("Please enter the file name: ")
-                    message, type = construct_open_file(directory, fileName)
+            while(self.file_open):
+                try: 
+                    if (option == "1"):
+                        message, type = construct_set_histogram_requirements()
+                        if(self.cube):
+                            message.region_id = -2
+                        return add_message_header(message, type)
+                    elif (option == "2"):
+                        message, type = construct_set_stats_requirements()
+                        return add_message_header(message, type)
+                    elif (option == "3"):
+                        self.file_open == False
+                        break
+                    else:
+                        print("\nThere seems to be an issue with your input. Please try again.\n")
+                    option = input(menu)
+                except:
+                    print("\nThere seems to be an issue with your input. Please try again.\n")
+                    continue
+        
+        menu = "Choose an option:\n1. Open File\nq. Quit Application\n\nSelection: "
+        option = input(menu)
+        try:
+            if (option == "1"):
+                directory = input("Please enter the directory name: ")
+                fileName = input("Please enter the file name: ")
+                message, type = construct_open_file(directory, fileName)
 
-                    return add_message_header(message, type)
-                elif (option == "q"):
-                    await self.websocket.close()
-                    return None
-                else:
-                    return 0
-            except:
-                print("There seems to be an issue finding or opening that file, please try again.")
+                return add_message_header(message, type)
+            elif (option == "q"):
+                await self.websocket.close()
+                return None
+            else:
+                return 0
+        except:
+            print("There seems to be an issue finding or opening that file, please try again.")
 
-        except Exception as e:
-            print("bpslp")
-
-    # Waits for input from client, sends message to server based on input and waits for required response.
 
     async def producer_handler(self, websocket, path):
+        """ Waits for input from client, sends message to server based on input and awaits a response. 
+        :param websocket: websocket
+        """
         while True:
             try:
                 message = await self.producer()
@@ -132,9 +132,11 @@ class Client:
                 print("Server closed unexpectedly, closing connection.")
                 exit(0)
 
-    # COMMENT
-
     async def __on_open_file_ack_response(self, ws, msg):
+        """ Called when there is a open file acknowledgement response from the server 
+        :param ws: websocket
+        :param msg: message received from the server
+        """
         if(msg.success == True):
             # Set open file to true
             self.file_open = True
@@ -162,6 +164,10 @@ class Client:
         
 
     async def __on_region_histogram_data(self, ws, msg):
+        """ Called when histogram data is received from the server. 
+        :param ws: websocket
+        :param msg: message received from the server
+        """
         print("\nRegion Histogram Data")
         print("No of Bins: ", msg.histograms[0].num_bins)
         print("Bin Width: ", msg.histograms[0].bin_width)
@@ -171,6 +177,10 @@ class Client:
         print("Bins: ", len(msg.histograms[0].bins),"\n")
     
     async def __on_region_stats_data(self, ws, msg):
+        """ Called when region statistics data is received from the server 
+        :param ws: websocket
+        :param msg: message received from the server
+        """
         print("\nRegion Statistics Data")
         for x in msg.statistics:
             print(self.STATS_TYPE_CODE_TO_NAME.get(x.stats_type),x.value)
@@ -181,7 +191,6 @@ class Client:
 #    Date: 09/08/2021
 #    Availability: https://github.com/DylanFouche/CADaFloP.git
     MESSAGE_TYPE_CODE_TO_EVENT_HANDLER = {
-
         enums_pb2.EventType.OPEN_FILE_ACK:
             __on_open_file_ack_response,
         enums_pb2.EventType.REGION_HISTOGRAM_DATA:
