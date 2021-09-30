@@ -12,6 +12,7 @@ SplitVector<T>::SplitVector(const std::size_t n_output_ports, const std::size_t 
     //input.addPort<T>("a");
     //creating no of inputs
     this->input_ports=n_input_ports;
+    this->totalPixels=0;
     for (auto i(0); i < n_input_ports; i++)
     {
         input.addPort<T>("in"+std::to_string(i));
@@ -43,7 +44,9 @@ raft::kstatus SplitVector<T>::run()
         {
             //Pop a number of vectors into t
             input["in"+std::to_string(count%input_ports)].template pop_range(t, NUM_VECTORS);
-
+            for(int i=0;i< NUM_VECTORS;i++){
+                totalPixels+=t[i].first.size();
+            }
             //allocate_s returns an object of the allocated memory
             //which will be released to the downstream port. pushing the memory allocated
             //to the consumer is handled by the returned object

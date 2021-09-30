@@ -54,16 +54,16 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     //Initialising using the constructors
     //NUM_THREADS is the number of input and output ports
     //Duplicates the middle kernel as required
-    readrowrange rr(this->height,NUM_THREADS);
+    readrowrange rr(this->height,1);
     readimage ri(fptr);
-    splitvec sp(NUM_THREADS,NUM_THREADS);
+    splitvec sp(NUM_THREADS,1);
     raftstats av(max, min);
     sum s(NUM_THREADS);
 
     //Map object will be used to link compute kernels
     raft::map m;
 
-    //kernel ri has a single output and sp has a single
+    //Parallel read, read image is duplicated
     //input port
     m += rr <= ri >= sp;
 
@@ -88,7 +88,7 @@ void Raftlib<T>::CalculateStatistics(fitsfile *fptr)
     //from the kernels
     this->sumTotal += s.total;
     this->sumsquares += s.sumSquaresTotal;
-    this->noOfPixels=ri.totPixels;
+    this->noOfPixels=sp.totalPixels;
 }
 
 /*
@@ -122,9 +122,9 @@ void Raftlib<T>::CalculateHistogram(fitsfile *fptr)
     //Initialising using the constructors
     //NUM_THREADS is the number of input and output ports
     //Duplicates the middle kernel as required
-    readrowrange rr(this->height,NUM_THREADS);
+    readrowrange rr(this->height,1);
     readimage ri(fptr);
-    splitvec sp(NUM_THREADS,NUM_THREADS);
+    splitvec sp(NUM_THREADS,1);
     rafthisto sv(getMean(), this->min, this->binWidth, this->noOfBins);
     mergebins mb(bins, NUM_THREADS);
 

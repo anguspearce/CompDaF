@@ -72,8 +72,7 @@ template <typename T>
 raft::kstatus RaftReadImage<T>::run()
 {
     auto &t(input["range"].template peek<std::vector<long long>>());
-    std::cout<<t[0]<<" "<<t[1]<<std::endl;
-    input["range"].unpeek();
+    //std::cout<<t[0]<<" "<<t[1]<<std::endl;
 
     //Loop through depth
     for (fpixel[2] = naxes[2]; fpixel[2] >= 1; fpixel[2]--)
@@ -121,6 +120,7 @@ raft::kstatus RaftReadImage<T>::run()
             (*c) = v;
         }
     }
+    input["range"].unpeek();
     delete(pixels);
     //Since this is a prodducer kerner and only has an output (no inputs)
     //must user stop to let the scheduler know when to exit the application
