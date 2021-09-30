@@ -2,7 +2,7 @@
 #include "EventHeader.h"
 
 // Constructor for session class
-Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws,int numThreads) : _socket(ws), numThreads(numThreads)
+Session::Session(uWS::WebSocket<false, true, PerSocketData> *ws, int numThreads) : _socket(ws), numThreads(numThreads)
 {
     _connected = true;
 }
@@ -56,7 +56,7 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
 
         std::string messageOut;
         std::vector<CARTA::HeaderEntry> headerEntries;
-        fitsFile = new FitsReader(filePath,numThreads);
+        fitsFile = new FitsReader(filePath, numThreads);
 
         //Getting file_info
         fitsFile->FillFileInfo(hdu_list, fName, fSize, naxis, naxes, headerEntries, messageOut);
@@ -83,23 +83,34 @@ void Session::OnOpenFile(const CARTA::OpenFile &message, uint32_t request_id)
             header_entry->set_comment(headerEntries[i].comment());
         }
         fitsFile->readImagePixels();
+        CARTA::OpenFileAck ack_message;
+        ack_message.set_success(success);
+        ack_message.set_file_id(file_id);
+        *ack_message.mutable_file_info() = file_info;
+        *ack_message.mutable_file_info_extended() = file_info_ext;
+
+        // Send protobuf message to client
+        SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
+
+        //Reading image pixels for region_histogram_data
+        CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
+        regionHistoData.set_file_id(file_id);
+        regionHistoData.set_region_id(-1);
+
+        SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
     }
-    CARTA::OpenFileAck ack_message;
-    ack_message.set_success(success);
-    ack_message.set_file_id(file_id);
-    *ack_message.mutable_file_info() = file_info;
-    *ack_message.mutable_file_info_extended() = file_info_ext;
+    else
+    {
+        std::cout<<"Failed to find file: "<<filePath<<std::endl;
+        CARTA::OpenFileAck ack_message;
+        ack_message.set_success(success);
+        ack_message.set_file_id(file_id);
+        *ack_message.mutable_file_info() = file_info;
+        *ack_message.mutable_file_info_extended() = file_info_ext;
 
-    
-    // Send protobuf message to client
-    SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
-
-    //Reading image pixels for region_histogram_data
-    CARTA::RegionHistogramData &regionHistoData = fitsFile->getRegionHistoData();
-    regionHistoData.set_file_id(file_id);
-    regionHistoData.set_region_id(-1);
-
-    SendEvent(CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, regionHistoData);
+        // Send protobuf message to client
+        SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack_message);
+    }
 }
 /*
     CARTA ICD that will return region histogram data 
