@@ -68,3 +68,4 @@ pip3 install:
 Example:
 ``` python3 src/runClient.py 9001 ```
 
+Please note that when specifying a file for the C++ backend, the default library is the folder the server is running from. Use relative path to find a file.
