@@ -8,10 +8,7 @@ import os
 import logging
 
 # Protocol buffers
-from protobufs.python import defs_pb2
 from protobufs.python import enums_pb2
-from protobufs.python import register_viewer_pb2
-from protobufs.python import file_info_pb2
 
 # Util
 from util.message_header import *
@@ -20,7 +17,7 @@ from util.message_provider import *
 # Fits file reader
 from astropy.io import fits
 
-# GraphLoader python file
+# GraphLoader to interact with daliuge-engine
 from daliuge_backend.GraphLoader import *
 
 
