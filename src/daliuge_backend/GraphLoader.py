@@ -16,7 +16,7 @@ class GraphLoader():
         self.ramSplit = ramSplit
     
     def createSession(self, file):
-        # Read in the JSON Graph File
+        # Read in the JSON Graph File definition
         try:
             print("Opening graph file.")
             with open(self.graphSpec, 'r') as f:
@@ -34,17 +34,19 @@ class GraphLoader():
             self.manager.destroySession(self.sessionId)
             self.manager.createSession(self.sessionId)
             print("Recreated session:", self.sessionId)
+        except:
+            return 0
         
         # Find the first Drop in the graph 
         for drop in self.graph:
             if drop.get('nm') == 'SplitStatsApp':
                 self.firstDrop = drop.get('oid')
-                drop["fileName"] = file
-                drop["ramSplit"] = self.ramSplit
+                drop["fileName"] = file # Changing the fileName parameter to the clients input
+                drop["ramSplit"] = self.ramSplit # Changing the number of splits inside each node based on terminal input
                 break
         # Ensure that the Drop was found
         if self.firstDrop == None:
-            print("Drop not found")
+            print("Drop not found.")
             return 0
         
         # Append graph
@@ -56,7 +58,7 @@ class GraphLoader():
             print("Failed to append graph, it is either corrupted or not a Physical Graph.")
             return 0
         
-        # Deploy session using sessionId and a list of Drop ID's that will be executed first
+        # Deploy session using sessionId with a list of Drop ID's that will be executed first
         try:
             self.manager.deploySession(self.sessionId, [self.firstDrop]) 
             print("Successfully deployed session", self.sessionId)

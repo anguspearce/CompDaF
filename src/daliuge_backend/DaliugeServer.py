@@ -157,6 +157,7 @@ class DaliugeServer:
             # Call method to execute and wait till the graph finishes, passing in file name
             code = self.executeGraph(msg.file)
             if code == 0:
+                print("The graph failed to be executed.")
                 ack.success = False
                 await ws.send(add_message_header(ack, ack_type))
                 await ws.close()
@@ -173,6 +174,9 @@ class DaliugeServer:
                     self.hist.get("numBins"), self.hist.get("hist"), self.hist.get("binWidth"), self.stats.get("mean"), self.stats.get("stddev"))
             await ws.send(add_message_header(histo, histo_type))
 
+    #    Author: Dylan Fouche
+    #    Date: 09/08/2021
+    #    Availability: https://github.com/DylanFouche/CADaFloP.git
     async def on_set_histogram_requirements(self, ws, msg):
         """Handle the SET_HISTOGRAM_REQUIREMENTS message.
 
@@ -189,7 +193,10 @@ class DaliugeServer:
         except:
             logging.error("\t[Server]\tUnable to compute region histogram")
             traceback.print_exc()
-
+        
+    #    Author: Dylan Fouche
+    #    Date: 09/08/2021
+    #    Availability: https://github.com/DylanFouche/CADaFloP.git
     async def on_region_statistics(self, ws, msg):
         """Handle the SET_STATS_REQUIREMENTS message.
 
