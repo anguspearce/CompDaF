@@ -52,7 +52,7 @@ class GraphLoader():
         # Append graph
         try:
             self.manager.addGraphSpec(self.sessionId, self.graph)
-            print("Successfully appended graph to the Node Manager.")
+            print("Successfully appended graph to the Node Manager in session", self.sessionId)
         except Exception:
             print(traceback.format_exc())
             print("Failed to append graph, it is either corrupted or not a Physical Graph.")

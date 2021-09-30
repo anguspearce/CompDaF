@@ -82,7 +82,7 @@ class Client:
                         message, type = construct_set_stats_requirements()
                         return add_message_header(message, type)
                     elif (option == "3"):
-                        self.file_open == False
+                        self.file_open = False
                         break
                     else:
                         print("\nThere seems to be an issue with your input. Please try again.\n")

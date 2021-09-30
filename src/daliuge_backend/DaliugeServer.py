@@ -52,23 +52,26 @@ class DaliugeServer:
 
     # Host function which awaits incoming connection, registers viewer and creates a session per client.
     async def host(self, websocket, port):
-        message = await websocket.recv()
-        messageType, messageId, messagePayload = strip_message_header(message)
-        self.sessionId = messageId
+        try:
+            message = await websocket.recv()
+            messageType, messageId, messagePayload = strip_message_header(message)
+            self.sessionId = messageId
 
-        # Using received session ID to get register viewer acknowledge 
-        ack, ack_type = construct_register_viewer_ack(int(self.sessionId))
-        if(ack.success):
-            print("Successfully connected with session:", self.sessionId)
-            # Initialise GraphLoader class with clients session ID and the chosen graph file
-            self.graphLoader = GraphLoader(self.sessionId, self.graphSpec, self.ramSplit)
-        else:
-            print("Failed to connect with session:", self.sessionId)
+            # Using received session ID to get register viewer acknowledge 
+            ack, ack_type = construct_register_viewer_ack(int(self.sessionId))
+            if(ack.success):
+                print("Successfully connected with session:", self.sessionId)
+                # Initialise GraphLoader class with clients session ID and the chosen graph file
+                self.graphLoader = GraphLoader(self.sessionId, self.graphSpec, self.ramSplit)
+            else:
+                print("Failed to connect with session:", self.sessionId)
 
-        # Sending register viewer ack
-        await websocket.send(add_message_header(ack,ack_type))
-        # Running receiver event loop to receive messages and pass to the consumer
-        await self.receiver(websocket, message)
+            # Sending register viewer ack
+            await websocket.send(add_message_header(ack,ack_type))
+            # Running receiver event loop to receive messages and pass to the consumer
+            await self.receiver(websocket, message)
+        except:
+            print("Client connection interrupted.")
 
     # Receiver function to wait for messages and pass to the consumer
     async def receiver(self, websocket, message):
@@ -77,7 +80,7 @@ class DaliugeServer:
             async for message in websocket:
                 await self.consumer(websocket, message)
         except Exception as e:
-            print("Exception raised:", e)
+            print("Error receiving messages from client.")
             await websocket.close()
             exit(0)
 
@@ -164,15 +167,18 @@ class DaliugeServer:
                 exit(0)
         except:
             ack.success = False
+        
+        try:
+            # Send protocol buffer ack
+            await ws.send(add_message_header(ack, ack_type))
 
-        # Send protocol buffer ack
-        await ws.send(add_message_header(ack, ack_type))
-
-        # If the full on_open_file was a success, send the histogram immediately
-        if ack.success:
-            histo, histo_type = construct_region_histogram_data(
-                    self.hist.get("numBins"), self.hist.get("hist"), self.hist.get("binWidth"), self.stats.get("mean"), self.stats.get("stddev"))
-            await ws.send(add_message_header(histo, histo_type))
+            # If the full on_open_file was a success, send the histogram immediately
+            if ack.success:
+                histo, histo_type = construct_region_histogram_data(
+                        self.hist.get("numBins"), self.hist.get("hist"), self.hist.get("binWidth"), self.stats.get("mean"), self.stats.get("stddev"))
+                await ws.send(add_message_header(histo, histo_type))
+        except:
+            print("Error sending data to client.")
 
     #    Author: Dylan Fouche
     #    Date: 09/08/2021
