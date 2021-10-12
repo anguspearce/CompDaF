@@ -34,7 +34,7 @@ To run the raft-backend server, from the build folder:
 ``` ./raftlib-server PORT NUM_THREADS``` <br />
 Example:
 ``` ./raftlib-server 9001 5```
-Will run the server on port 9001 and raftlib will use 5 output ports.
+Will run the server on port 9001 and raftlib will duplicate the middle kernel 5 times (5 Threads). 
 
 # Daliuge Backend
 ## Starting a server
@@ -68,3 +68,4 @@ pip3 install:
 Example:
 ``` python3 src/runClient.py 9001 ```
 
+Please note that when specifying a file for the C++ backend, the default library is the folder the server is running from. Use relative path to find a file.
