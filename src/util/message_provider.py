@@ -126,7 +126,7 @@ def construct_set_histogram_requirements():
     return (message, message_type)
 
 
-def construct_region_histogram_data(num_bins, bins, mean, std_dev):
+def construct_region_histogram_data(num_bins, bins, binWidth, mean, std_dev):
     """Construct a REGION_HISTOGRAM_DATA message.
 
     :param num_bins: the number of bins for the histogram
@@ -147,7 +147,7 @@ def construct_region_histogram_data(num_bins, bins, mean, std_dev):
     histogram.mean = mean
     histogram.std_dev = std_dev
     histogram.first_bin_center = -1
-    histogram.bin_width = -1
+    histogram.bin_width = binWidth
     message.histograms.append(histogram)
     return (message, message_type)
 

@@ -397,9 +397,10 @@ class ComputeHistApp(BarrierAppDROP):
         # Double for loop to iterate through width and height
         for i in range(data.shape[0]):
             for j in range(data.shape[1]):
-                scaledVal = (data[i,j] - min) / binWidth # Calculate the index of the bin to increase
-                index = math.floor(scaledVal) # Floor the value
-                hist[index] += 1 # Increase said index
+                if not math.isnan(data[i,j]):
+                    scaledVal = (data[i,j] - min) / binWidth # Calculate the index of the bin to increase
+                    index = math.floor(scaledVal) # Floor the value
+                    hist[index] += 1 # Increase said index
         return hist
 
 

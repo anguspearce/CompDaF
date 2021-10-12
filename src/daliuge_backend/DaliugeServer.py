@@ -156,6 +156,7 @@ class DaliugeServer:
 
             # Call method to execute and wait till the graph finishes, passing in file name
             code = self.executeGraph(msg.file)
+            
             if code == 0:
                 print("The graph failed to be executed.")
                 ack.success = False
